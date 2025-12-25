@@ -53,6 +53,7 @@ interface TransactionPreview {
     signerDisplay: string;
 }
 
+
 // Simulation result type
 interface SimulationResult {
     success: boolean;
@@ -64,6 +65,25 @@ interface SimulationResult {
     }>;
     vmStatus?: string;
     error?: string;
+    // Decoded human-readable fields
+    decoded?: {
+        status: 'success' | 'abort' | 'error';
+        abortReason: string | null;
+        estimatedGas: {
+            units: string;
+            formatted: string;
+        };
+        events: Array<{
+            type: string;
+            data: any;
+            sequenceNumber: string;
+        }>;
+        stateChanges: Array<{
+            type: string;
+            address: string;
+            resource: string;
+        }>;
+    };
 }
 
 export default function CreateTransaction() {
@@ -99,6 +119,30 @@ export default function CreateTransaction() {
             signerDisplay: transactionDraft.signer === 'user' ? 'User Wallet' : 'Agent Signer',
         };
     }, [transactionDraft, selectedFunctionData]);
+
+    // Derived decoded simulation result - transforms raw response to human-readable format
+    const decodedSimulationResult = useMemo(() => {
+        if (!simulationResult) return null;
+
+        // Use decoded from API if available, otherwise build from raw
+        if (simulationResult.decoded) {
+            return simulationResult.decoded;
+        }
+
+        // Fallback: build decoded from raw fields
+        return {
+            status: simulationResult.success ? 'success' as const : 'abort' as const,
+            abortReason: simulationResult.vmStatus && simulationResult.vmStatus !== 'Executed successfully'
+                ? simulationResult.vmStatus
+                : null,
+            estimatedGas: {
+                units: simulationResult.gasUsed || '0',
+                formatted: simulationResult.gasUsed || '0',
+            },
+            events: [] as Array<{ type: string; data: any; sequenceNumber: string }>,
+            stateChanges: [] as Array<{ type: string; address: string; resource: string }>,
+        };
+    }, [simulationResult]);
 
     // Update module and reset function when module changes
     const handleModuleChange = (module: string) => {
@@ -161,8 +205,16 @@ export default function CreateTransaction() {
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Simulation failed');
+            // If we got decoded data, use it (even for errors)
+            if (data.decoded) {
+                setSimulationResult(data);
+                return;
+            }
+
+            // Fallback for old-style errors without decoded data
+            if (!response.ok || !data.success) {
+                setSimulationError(data.error || 'Simulation failed');
+                return;
             }
 
             setSimulationResult(data);
@@ -346,35 +398,88 @@ export default function CreateTransaction() {
                         </Card>
                     )}
 
-                    {simulationResult && (
+                    {simulationResult && decodedSimulationResult && (
                         <>
-                            <Card className={`border-foreground/20 animate-fade-in ${simulationResult.success ? 'bg-secondary/30' : 'bg-destructive/10'}`}>
+                            <Card className={`border-foreground/20 animate-fade-in ${decodedSimulationResult.status === 'success' ? 'bg-secondary/30' : 'bg-destructive/10'}`}>
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-base font-medium flex items-center gap-2">
                                         Simulation Result
                                         <Badge variant="outline" className="gap-1">
-                                            {simulationResult.success ? (
+                                            {decodedSimulationResult.status === 'success' ? (
                                                 <>
                                                     <Check className="w-3 h-3" />
-                                                    Successful
+                                                    Success
                                                 </>
                                             ) : (
                                                 <>
-                                                    ⚠️ Failed
+                                                    ⚠️ Abort
                                                 </>
                                             )}
                                         </Badge>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
+                                    {/* Status */}
                                     <div className="flex justify-between items-center py-2 border-b border-border">
-                                        <span className="text-sm text-muted-foreground">Gas Estimate</span>
-                                        <span className="font-mono text-sm">{simulationResult.gasUsed || '0'} units</span>
+                                        <span className="text-sm text-muted-foreground">Status</span>
+                                        <span className={`font-mono text-sm ${decodedSimulationResult.status === 'success' ? 'text-green-500' : 'text-destructive'}`}>
+                                            {decodedSimulationResult.status.toUpperCase()}
+                                        </span>
                                     </div>
+
+                                    {/* Abort Reason */}
+                                    {decodedSimulationResult.abortReason && (
+                                        <div className="flex justify-between items-center py-2 border-b border-border">
+                                            <span className="text-sm text-muted-foreground">Abort Reason</span>
+                                            <span className="text-sm text-destructive max-w-[200px] truncate" title={decodedSimulationResult.abortReason}>
+                                                {decodedSimulationResult.abortReason}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Estimated Gas */}
+                                    <div className="flex justify-between items-center py-2 border-b border-border">
+                                        <span className="text-sm text-muted-foreground">Estimated Gas</span>
+                                        <span className="font-mono text-sm">
+                                            {decodedSimulationResult.estimatedGas.formatted} units
+                                            {decodedSimulationResult.estimatedGas.formatted !== decodedSimulationResult.estimatedGas.units && (
+                                                <span className="text-muted-foreground ml-1">
+                                                    ({decodedSimulationResult.estimatedGas.units})
+                                                </span>
+                                            )}
+                                        </span>
+                                    </div>
+
+                                    {/* Emitted Events */}
                                     <div className="flex justify-between items-center py-2">
-                                        <span className="text-sm text-muted-foreground">VM Status</span>
-                                        <span className="text-sm text-muted-foreground">{simulationResult.vmStatus || 'N/A'}</span>
+                                        <span className="text-sm text-muted-foreground">Emitted Events</span>
+                                        <span className="font-mono text-sm">
+                                            {decodedSimulationResult.events.length > 0
+                                                ? `${decodedSimulationResult.events.length} event${decodedSimulationResult.events.length > 1 ? 's' : ''}`
+                                                : 'None'
+                                            }
+                                        </span>
                                     </div>
+
+                                    {/* Event details if any */}
+                                    {decodedSimulationResult.events.length > 0 && (
+                                        <div className="pt-2 border-t border-border space-y-2">
+                                            <span className="text-xs text-muted-foreground font-medium">Event Details:</span>
+                                            {decodedSimulationResult.events.slice(0, 3).map((event, idx) => (
+                                                <div key={idx} className="text-xs font-mono bg-background/50 p-2 rounded">
+                                                    <span className="text-muted-foreground">Type: </span>
+                                                    <span className="text-foreground">{event.type}</span>
+                                                </div>
+                                            ))}
+                                            {decodedSimulationResult.events.length > 3 && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    +{decodedSimulationResult.events.length - 3} more events
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Raw error if present */}
                                     {simulationResult.error && (
                                         <div className="pt-2 border-t border-border">
                                             <span className="text-sm text-destructive">{simulationResult.error}</span>
