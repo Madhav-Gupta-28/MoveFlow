@@ -17,25 +17,23 @@ import {
 } from '@/components/ui/select';
 
 const modules = [
-    { value: '0xabc::counter', label: '0xabc::counter' },
-    { value: '0xabc::vault', label: '0xabc::vault' },
-    { value: '0xdef::token', label: '0xdef::token' },
+    { value: '0x1::coin', label: '0x1::coin (Standard Coin Module)' },
+    { value: '0x1::account', label: '0x1::account (Account Module)' },
+    { value: '0x1::aptos_account', label: '0x1::aptos_account (Aptos Account)' },
 ];
 
 const functionsByModule: Record<string, { name: string; params: { name: string; type: string }[] }[]> = {
-    '0xabc::counter': [
-        { name: 'increment', params: [] },
-        { name: 'reset', params: [{ name: 'value', type: 'u64' }] },
-        { name: 'get_value', params: [] },
+    '0x1::coin': [
+        { name: 'transfer', params: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'amount', type: 'u64' }] },
+        { name: 'balance', params: [{ name: 'owner', type: 'address' }] },
     ],
-    '0xabc::vault': [
-        { name: 'deposit', params: [{ name: 'amount', type: 'u64' }] },
-        { name: 'withdraw', params: [{ name: 'amount', type: 'u64' }, { name: 'recipient', type: 'address' }] },
+    '0x1::account': [
+        { name: 'create_account', params: [{ name: 'new_address', type: 'address' }] },
+        { name: 'exists_at', params: [{ name: 'addr', type: 'address' }] },
+    ],
+    '0x1::aptos_account': [
         { name: 'transfer', params: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'u64' }] },
-    ],
-    '0xdef::token': [
-        { name: 'mint', params: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'u64' }] },
-        { name: 'burn', params: [{ name: 'amount', type: 'u64' }] },
+        { name: 'create_account', params: [{ name: 'new_account', type: 'address' }] },
     ],
 };
 
@@ -55,6 +53,19 @@ interface TransactionPreview {
     signerDisplay: string;
 }
 
+// Simulation result type
+interface SimulationResult {
+    success: boolean;
+    gasUsed?: string;
+    changes?: Array<{
+        address: string;
+        stateKeyHash: string;
+        data: any;
+    }>;
+    vmStatus?: string;
+    error?: string;
+}
+
 export default function CreateTransaction() {
     // Single state object for all transaction builder inputs
     const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>({
@@ -63,7 +74,11 @@ export default function CreateTransaction() {
         parameters: {},
         signer: 'user',
     });
-    const [simulated, setSimulated] = useState(false);
+
+    // Simulation state
+    const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [simulationError, setSimulationError] = useState<string | null>(null);
 
     const functions = transactionDraft.module ? functionsByModule[transactionDraft.module] || [] : [];
     const selectedFunctionData = functions.find((f) => f.name === transactionDraft.function);
@@ -93,6 +108,9 @@ export default function CreateTransaction() {
             parameters: {},
             signer: transactionDraft.signer,
         });
+        // Reset simulation when changing module
+        setSimulationResult(null);
+        setSimulationError(null);
     };
 
     // Update function
@@ -102,6 +120,9 @@ export default function CreateTransaction() {
             function: functionName,
             parameters: {}, // Reset parameters when function changes
         }));
+        // Reset simulation when changing function
+        setSimulationResult(null);
+        setSimulationError(null);
     };
 
     // Update individual parameter
@@ -123,8 +144,34 @@ export default function CreateTransaction() {
         }));
     };
 
-    const handleSimulate = () => {
-        setSimulated(true);
+    // Simulate transaction on Movement Testnet
+    const handleSimulate = async () => {
+        setIsSimulating(true);
+        setSimulationError(null);
+        setSimulationResult(null);
+
+        try {
+            const response = await fetch('/api/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(transactionDraft),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Simulation failed');
+            }
+
+            setSimulationResult(data);
+        } catch (error: any) {
+            console.error('Simulation error:', error);
+            setSimulationError(error.message || 'Failed to simulate transaction');
+        } finally {
+            setIsSimulating(false);
+        }
     };
 
     return (
@@ -246,10 +293,10 @@ export default function CreateTransaction() {
                         size="lg"
                         className="w-full gap-2"
                         onClick={handleSimulate}
-                        disabled={!transactionDraft.module || !transactionDraft.function}
+                        disabled={!transactionDraft.module || !transactionDraft.function || isSimulating}
                     >
                         <Play className="w-4 h-4" />
-                        Simulate Transaction
+                        {isSimulating ? 'Simulating...' : 'Simulate Transaction'}
                     </Button>
                 </div>
 
@@ -284,28 +331,55 @@ export default function CreateTransaction() {
                         </CardContent>
                     </Card>
 
+
                     {/* Simulation Result */}
-                    {simulated && (
+                    {simulationError && (
+                        <Card className="border-destructive/50 bg-destructive/10 animate-fade-in">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-base font-medium flex items-center gap-2 text-destructive">
+                                    Simulation Error
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-destructive">{simulationError}</p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {simulationResult && (
                         <>
-                            <Card className="border-foreground/20 bg-secondary/30 animate-fade-in">
+                            <Card className={`border-foreground/20 animate-fade-in ${simulationResult.success ? 'bg-secondary/30' : 'bg-destructive/10'}`}>
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-base font-medium flex items-center gap-2">
                                         Simulation Result
                                         <Badge variant="outline" className="gap-1">
-                                            <Check className="w-3 h-3" />
-                                            Successful
+                                            {simulationResult.success ? (
+                                                <>
+                                                    <Check className="w-3 h-3" />
+                                                    Successful
+                                                </>
+                                            ) : (
+                                                <>
+                                                    ⚠️ Failed
+                                                </>
+                                            )}
                                         </Badge>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <div className="flex justify-between items-center py-2 border-b border-border">
                                         <span className="text-sm text-muted-foreground">Gas Estimate</span>
-                                        <span className="font-mono text-sm">1,234 units</span>
+                                        <span className="font-mono text-sm">{simulationResult.gasUsed || '0'} units</span>
                                     </div>
                                     <div className="flex justify-between items-center py-2">
-                                        <span className="text-sm text-muted-foreground">Abort Reason</span>
-                                        <span className="text-sm text-muted-foreground">None</span>
+                                        <span className="text-sm text-muted-foreground">VM Status</span>
+                                        <span className="text-sm text-muted-foreground">{simulationResult.vmStatus || 'N/A'}</span>
                                     </div>
+                                    {simulationResult.error && (
+                                        <div className="pt-2 border-t border-border">
+                                            <span className="text-sm text-destructive">{simulationResult.error}</span>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 
