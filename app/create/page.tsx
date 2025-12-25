@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Play, Zap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,18 +39,88 @@ const functionsByModule: Record<string, { name: string; params: { name: string; 
     ],
 };
 
+// Transaction draft state type
+interface TransactionDraft {
+    module: string;
+    function: string;
+    parameters: Record<string, string>;
+    signer: 'user' | 'agent';
+}
+
+// Transaction preview type
+interface TransactionPreview {
+    module: string;
+    function: string;
+    parameters: Array<{ name: string; value: string; type: string }>;
+    signerDisplay: string;
+}
+
 export default function CreateTransaction() {
-    const [selectedModule, setSelectedModule] = useState<string>('');
-    const [selectedFunction, setSelectedFunction] = useState<string>('');
-    const [signer, setSigner] = useState<string>('user');
-    const [paramValues, setParamValues] = useState<Record<string, string>>({});
+    // Single state object for all transaction builder inputs
+    const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>({
+        module: '',
+        function: '',
+        parameters: {},
+        signer: 'user',
+    });
     const [simulated, setSimulated] = useState(false);
 
-    const functions = selectedModule ? functionsByModule[selectedModule] || [] : [];
-    const selectedFunctionData = functions.find((f) => f.name === selectedFunction);
+    const functions = transactionDraft.module ? functionsByModule[transactionDraft.module] || [] : [];
+    const selectedFunctionData = functions.find((f) => f.name === transactionDraft.function);
 
+    // Derived transaction preview - computed from transactionDraft
+    const transactionPreview = useMemo<TransactionPreview>(() => {
+        // Format parameters with their types
+        const formattedParameters = selectedFunctionData?.params.map((param) => ({
+            name: param.name,
+            value: transactionDraft.parameters[param.name] || '—',
+            type: param.type,
+        })) || [];
+
+        return {
+            module: transactionDraft.module || '—',
+            function: transactionDraft.function || '—',
+            parameters: formattedParameters,
+            signerDisplay: transactionDraft.signer === 'user' ? 'User Wallet' : 'Agent Signer',
+        };
+    }, [transactionDraft, selectedFunctionData]);
+
+    // Update module and reset function when module changes
+    const handleModuleChange = (module: string) => {
+        setTransactionDraft({
+            module,
+            function: '',
+            parameters: {},
+            signer: transactionDraft.signer,
+        });
+    };
+
+    // Update function
+    const handleFunctionChange = (functionName: string) => {
+        setTransactionDraft((prev) => ({
+            ...prev,
+            function: functionName,
+            parameters: {}, // Reset parameters when function changes
+        }));
+    };
+
+    // Update individual parameter
     const handleParamChange = (paramName: string, value: string) => {
-        setParamValues((prev) => ({ ...prev, [paramName]: value }));
+        setTransactionDraft((prev) => ({
+            ...prev,
+            parameters: {
+                ...prev.parameters,
+                [paramName]: value,
+            },
+        }));
+    };
+
+    // Update signer
+    const handleSignerChange = (signer: 'user' | 'agent') => {
+        setTransactionDraft((prev) => ({
+            ...prev,
+            signer,
+        }));
     };
 
     const handleSimulate = () => {
@@ -75,7 +145,7 @@ export default function CreateTransaction() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Select value={selectedModule} onValueChange={(v) => { setSelectedModule(v); setSelectedFunction(''); }}>
+                            <Select value={transactionDraft.module} onValueChange={handleModuleChange}>
                                 <SelectTrigger className="bg-background">
                                     <SelectValue placeholder="Choose a module..." />
                                 </SelectTrigger>
@@ -99,12 +169,12 @@ export default function CreateTransaction() {
                         </CardHeader>
                         <CardContent>
                             <Select
-                                value={selectedFunction}
-                                onValueChange={setSelectedFunction}
-                                disabled={!selectedModule}
+                                value={transactionDraft.function}
+                                onValueChange={handleFunctionChange}
+                                disabled={!transactionDraft.module}
                             >
                                 <SelectTrigger className="bg-background">
-                                    <SelectValue placeholder={selectedModule ? 'Choose a function...' : 'Select module first'} />
+                                    <SelectValue placeholder={transactionDraft.module ? 'Choose a function...' : 'Select module first'} />
                                 </SelectTrigger>
                                 <SelectContent className="bg-popover border-border">
                                     {functions.map((f) => (
@@ -136,7 +206,7 @@ export default function CreateTransaction() {
                                         </Label>
                                         <Input
                                             placeholder={`Enter ${param.type}...`}
-                                            value={paramValues[param.name] || ''}
+                                            value={transactionDraft.parameters[param.name] || ''}
                                             onChange={(e) => handleParamChange(param.name, e.target.value)}
                                             className="font-mono bg-background"
                                         />
@@ -144,7 +214,7 @@ export default function CreateTransaction() {
                                 ))
                             ) : (
                                 <p className="text-sm text-muted-foreground">
-                                    {selectedFunction ? 'No parameters required' : 'Select a function to see parameters'}
+                                    {transactionDraft.function ? 'No parameters required' : 'Select a function to see parameters'}
                                 </p>
                             )}
                         </CardContent>
@@ -158,7 +228,7 @@ export default function CreateTransaction() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <RadioGroup value={signer} onValueChange={setSigner} className="space-y-3">
+                            <RadioGroup value={transactionDraft.signer} onValueChange={handleSignerChange} className="space-y-3">
                                 <div className="flex items-center space-x-3">
                                     <RadioGroupItem value="user" id="user" />
                                     <Label htmlFor="user" className="text-sm cursor-pointer">User Wallet</Label>
@@ -176,7 +246,7 @@ export default function CreateTransaction() {
                         size="lg"
                         className="w-full gap-2"
                         onClick={handleSimulate}
-                        disabled={!selectedModule || !selectedFunction}
+                        disabled={!transactionDraft.module || !transactionDraft.function}
                     >
                         <Play className="w-4 h-4" />
                         Simulate Transaction
@@ -194,21 +264,21 @@ export default function CreateTransaction() {
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center py-2 border-b border-border">
                                     <span className="text-sm text-muted-foreground">Module</span>
-                                    <span className="font-mono text-sm">{selectedModule || '—'}</span>
+                                    <span className="font-mono text-sm">{transactionPreview.module}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-2 border-b border-border">
                                     <span className="text-sm text-muted-foreground">Function</span>
-                                    <span className="font-mono text-sm">{selectedFunction || '—'}</span>
+                                    <span className="font-mono text-sm">{transactionPreview.function}</span>
                                 </div>
-                                {selectedFunctionData?.params.map((param) => (
+                                {transactionPreview.parameters.map((param) => (
                                     <div key={param.name} className="flex justify-between items-center py-2 border-b border-border">
                                         <span className="text-sm text-muted-foreground">{param.name}</span>
-                                        <span className="font-mono text-sm">{paramValues[param.name] || '—'}</span>
+                                        <span className="font-mono text-sm">{param.value}</span>
                                     </div>
                                 ))}
                                 <div className="flex justify-between items-center py-2">
                                     <span className="text-sm text-muted-foreground">Signer</span>
-                                    <span className="text-sm">{signer === 'user' ? 'User Wallet' : 'Agent Signer'}</span>
+                                    <span className="text-sm">{transactionPreview.signerDisplay}</span>
                                 </div>
                             </div>
                         </CardContent>
