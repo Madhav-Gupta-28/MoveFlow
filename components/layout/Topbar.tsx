@@ -1,5 +1,8 @@
-import { Wifi, Wallet } from "lucide-react";
+'use client';
+
+import { Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { WalletButton } from "@/components/wallet";
 
 export function Topbar() {
   return (
@@ -7,8 +10,8 @@ export function Topbar() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
-            <svg 
-              viewBox="0 0 24 24" 
+            <svg
+              viewBox="0 0 24 24"
               className="w-5 h-5 text-background"
               fill="none"
               stroke="currentColor"
@@ -32,11 +35,9 @@ export function Topbar() {
           <Wifi className="w-3 h-3" />
           Movement Testnet
         </Badge>
-        <Badge variant="outline" className="gap-1.5">
-          <Wallet className="w-3 h-3" />
-          Wallet Connected
-        </Badge>
+        <WalletButton />
       </div>
     </header>
   );
 }
+

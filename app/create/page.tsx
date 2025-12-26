@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Play, Zap, Check } from 'lucide-react';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { Play, Zap, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +88,9 @@ interface SimulationResult {
 }
 
 export default function CreateTransaction() {
+    // Wallet connection state
+    const { connected, account } = useWallet();
+
     // Single state object for all transaction builder inputs
     const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>({
         module: '',
@@ -103,6 +107,13 @@ export default function CreateTransaction() {
     const functions = transactionDraft.module ? functionsByModule[transactionDraft.module] || [] : [];
     const selectedFunctionData = functions.find((f) => f.name === transactionDraft.function);
 
+    // Helper to truncate address
+    const truncateAddress = (address: string): string => {
+        if (!address) return '';
+        return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    };
+
+
     // Derived transaction preview - computed from transactionDraft
     const transactionPreview = useMemo<TransactionPreview>(() => {
         // Format parameters with their types
@@ -112,13 +123,25 @@ export default function CreateTransaction() {
             type: param.type,
         })) || [];
 
+        // Determine signer display based on connection and selection
+        let signerDisplay = 'Not Connected';
+        if (transactionDraft.signer === 'user') {
+            if (connected && account?.address) {
+                signerDisplay = truncateAddress(account.address.toString());
+            } else {
+                signerDisplay = 'Connect Wallet';
+            }
+        } else {
+            signerDisplay = 'Agent Signer';
+        }
+
         return {
             module: transactionDraft.module || '—',
             function: transactionDraft.function || '—',
             parameters: formattedParameters,
-            signerDisplay: transactionDraft.signer === 'user' ? 'User Wallet' : 'Agent Signer',
+            signerDisplay,
         };
-    }, [transactionDraft, selectedFunctionData]);
+    }, [transactionDraft, selectedFunctionData, connected, account]);
 
     // Derived decoded simulation result - transforms raw response to human-readable format
     const decodedSimulationResult = useMemo(() => {
