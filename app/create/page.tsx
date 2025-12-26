@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Play, Zap, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -113,6 +120,7 @@ export default function CreateTransaction() {
     const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationError, setSimulationError] = useState<string | null>(null);
+    const [selectedStateDiff, setSelectedStateDiff] = useState<any | null>(null);
 
     const functions = transactionDraft.module ? functionsByModule[transactionDraft.module] || [] : [];
     const selectedFunctionData = functions.find((f) => f.name === transactionDraft.function);
@@ -527,52 +535,43 @@ export default function CreateTransaction() {
                                 </CardContent>
                             </Card>
 
-                            {/* State Diff Viewer */}
-                            {/* State Diff Viewer */}
+                            {/* State Changes - Moved here for better visibility */}
                             {decodedSimulationResult.stateDiffs && decodedSimulationResult.stateDiffs.length > 0 && (
                                 <Card className="border-border">
                                     <CardHeader className="pb-4">
-                                        <CardTitle className="text-base font-medium">State Changes (Preview)</CardTitle>
+                                        <CardTitle className="text-base font-medium">State Changes</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
+                                    <CardContent className="space-y-2">
                                         {decodedSimulationResult.stateDiffs.map((diff, idx) => (
-                                            <div key={idx} className="p-3 rounded-md bg-background border border-border/50 text-sm space-y-2">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Badge variant="outline" className="font-mono text-xs">
-                                                        {diff.resourceType.split('::').slice(1).join('::')}
-                                                    </Badge>
-                                                    <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                                        {diff.address.slice(0, 6)}...{diff.address.slice(-4)}
-                                                    </span>
-                                                    {diff.changeType === 'create' && <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">Created</Badge>}
-                                                    {diff.changeType === 'delete' && <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">Deleted</Badge>}
+                                            <div
+                                                key={idx}
+                                                onClick={() => setSelectedStateDiff(diff)}
+                                                className="p-3 rounded-lg bg-muted/30 border border-border hover:border-primary/50 cursor-pointer transition-all space-y-2"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="font-medium text-sm truncate flex-1">
+                                                        {diff.resourceType.split('::').pop()}
+                                                    </div>
+                                                    {diff.changeType === 'create' && (
+                                                        <Badge className="bg-green-500/10 text-green-500 text-xs shrink-0">New</Badge>
+                                                    )}
+                                                    {diff.changeType === 'delete' && (
+                                                        <Badge className="bg-red-500/10 text-red-500 text-xs shrink-0">Deleted</Badge>
+                                                    )}
                                                 </div>
-
-                                                <div className="space-y-1.5 pl-1">
-                                                    {diff.fieldDiffs.map((field, fIdx) => (
-                                                        <div key={fIdx} className="flex items-center gap-2 font-mono text-xs">
-                                                            <span className="text-muted-foreground w-20 truncate" title={field.field}>{field.field}:</span>
-
-                                                            {field.before !== null && (
-                                                                <>
-                                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 line-through decoration-red-500/50">
-                                                                        {field.before}
-                                                                    </span>
-                                                                    <span className="text-muted-foreground">→</span>
-                                                                </>
-                                                            )}
-
-                                                            <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">
-                                                                {field.after}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                <div className="text-xs text-muted-foreground">
+                                                    {diff.fieldDiffs.length} field{diff.fieldDiffs.length > 1 ? 's' : ''} changed
                                                 </div>
                                             </div>
                                         ))}
+                                        <div className="text-xs text-muted-foreground text-center pt-1">
+                                            Click to view details
+                                        </div>
                                     </CardContent>
                                 </Card>
                             )}
+
+
 
                             {/* Execute Section */}
                             <Card className="border-border">
@@ -590,6 +589,55 @@ export default function CreateTransaction() {
                     )}
                 </div>
             </div>
+
+            {/* State Diff Detail Modal */}
+            <Dialog open={selectedStateDiff !== null} onOpenChange={(open) => !open && setSelectedStateDiff(null)}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>State Change Details</DialogTitle>
+                        <DialogDescription>
+                            {selectedStateDiff && (
+                                <span className="font-mono text-sm">
+                                    {selectedStateDiff.resourceType}
+                                </span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedStateDiff && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 pb-3 border-b">
+                                <span className="text-sm text-muted-foreground">Address:</span>
+                                <span className="font-mono text-sm">{selectedStateDiff.address}</span>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="font-medium text-sm">Field Changes:</div>
+                                {selectedStateDiff.fieldDiffs.map((field: any, idx: number) => (
+                                    <div key={idx} className="p-4 rounded-lg bg-muted/30 border space-y-2">
+                                        <div className="font-medium text-sm">{field.field}</div>
+                                        <div className="space-y-1">
+                                            {field.before !== null && (
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-xs text-muted-foreground min-w-[60px]">Before:</span>
+                                                    <code className="flex-1 p-2 rounded bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-xs overflow-x-auto">
+                                                        {field.before}
+                                                    </code>
+                                                </div>
+                                            )}
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-xs text-muted-foreground min-w-[60px]">After:</span>
+                                                <code className="flex-1 p-2 rounded bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 text-xs overflow-x-auto">
+                                                    {field.after}
+                                                </code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
