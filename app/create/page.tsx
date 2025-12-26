@@ -84,6 +84,16 @@ interface SimulationResult {
             address: string;
             resource: string;
         }>;
+        stateDiffs?: Array<{
+            resourceType: string;
+            address: string;
+            changeType: 'write' | 'delete' | 'create';
+            fieldDiffs: Array<{
+                field: string;
+                before: string | null;
+                after: string | null;
+            }>;
+        }>;
     };
 }
 
@@ -218,12 +228,18 @@ export default function CreateTransaction() {
         setSimulationResult(null);
 
         try {
+            const requestBody = {
+                ...transactionDraft,
+                publicKey: (connected && account?.publicKey) ? account.publicKey.toString() : undefined,
+                signerAddress: (connected && account?.address) ? account.address.toString() : undefined
+            };
+
             const response = await fetch('/api/simulate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(transactionDraft),
+                body: JSON.stringify(requestBody),
             });
 
             const data = await response.json();
@@ -512,27 +528,51 @@ export default function CreateTransaction() {
                             </Card>
 
                             {/* State Diff Viewer */}
-                            <Card className="border-border">
-                                <CardHeader className="pb-4">
-                                    <CardTitle className="text-base font-medium">State Changes (Preview)</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <div className="p-3 rounded-md bg-background font-mono text-sm space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-muted-foreground">counter.value:</span>
-                                            <span className="px-2 py-0.5 rounded bg-diff-remove text-foreground">4</span>
-                                            <span className="text-muted-foreground">→</span>
-                                            <span className="px-2 py-0.5 rounded bg-diff-add text-foreground">5</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-muted-foreground">balance:</span>
-                                            <span className="px-2 py-0.5 rounded bg-diff-remove text-foreground">100</span>
-                                            <span className="text-muted-foreground">→</span>
-                                            <span className="px-2 py-0.5 rounded bg-diff-add text-foreground">95</span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            {/* State Diff Viewer */}
+                            {decodedSimulationResult.stateDiffs && decodedSimulationResult.stateDiffs.length > 0 && (
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium">State Changes (Preview)</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {decodedSimulationResult.stateDiffs.map((diff, idx) => (
+                                            <div key={idx} className="p-3 rounded-md bg-background border border-border/50 text-sm space-y-2">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge variant="outline" className="font-mono text-xs">
+                                                        {diff.resourceType.split('::').slice(1).join('::')}
+                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                                        {diff.address.slice(0, 6)}...{diff.address.slice(-4)}
+                                                    </span>
+                                                    {diff.changeType === 'create' && <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">Created</Badge>}
+                                                    {diff.changeType === 'delete' && <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">Deleted</Badge>}
+                                                </div>
+
+                                                <div className="space-y-1.5 pl-1">
+                                                    {diff.fieldDiffs.map((field, fIdx) => (
+                                                        <div key={fIdx} className="flex items-center gap-2 font-mono text-xs">
+                                                            <span className="text-muted-foreground w-20 truncate" title={field.field}>{field.field}:</span>
+
+                                                            {field.before !== null && (
+                                                                <>
+                                                                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 line-through decoration-red-500/50">
+                                                                        {field.before}
+                                                                    </span>
+                                                                    <span className="text-muted-foreground">→</span>
+                                                                </>
+                                                            )}
+
+                                                            <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-500">
+                                                                {field.after}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             {/* Execute Section */}
                             <Card className="border-border">

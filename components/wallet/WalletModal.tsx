@@ -61,17 +61,31 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
                     {availableWallets.length === 0 ? (
                         <div className="text-center py-6 text-muted-foreground">
                             <p className="mb-4">No wallets detected</p>
-                            <Button variant="outline" asChild>
-                                <a
-                                    href="https://petra.app/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="gap-2"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                    Install Petra Wallet
-                                </a>
-                            </Button>
+                            <p className="text-xs mb-4">Install a Movement Testnet compatible wallet:</p>
+                            <div className="flex flex-col gap-2">
+                                <Button variant="outline" asChild>
+                                    <a
+                                        href="https://nightly.app/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="gap-2"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Install Nightly Wallet
+                                    </a>
+                                </Button>
+                                <Button variant="outline" asChild>
+                                    <a
+                                        href="https://razorwallet.xyz/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="gap-2"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Install Razor Wallet
+                                    </a>
+                                </Button>
+                            </div>
                         </div>
                     ) : (
                         availableWallets.map((wallet) => (

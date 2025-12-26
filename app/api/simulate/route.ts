@@ -16,6 +16,20 @@ interface SimulationRequest {
     function: string;
     parameters: Record<string, string>;
     signer: 'user' | 'agent';
+    publicKey?: string;
+    signerAddress?: string;
+}
+
+// State diff item for before/after comparison
+interface StateDiffItem {
+    resourceType: string;
+    address: string;
+    changeType: 'write' | 'delete' | 'create';
+    fieldDiffs: Array<{
+        field: string;
+        before: string | null;
+        after: string | null;
+    }>;
 }
 
 interface SimulationResult {
@@ -46,6 +60,8 @@ interface SimulationResult {
             address: string;
             resource: string;
         }>;
+        // Enhanced state diffs
+        stateDiffs: StateDiffItem[];
     };
 }
 
@@ -99,14 +115,33 @@ export async function POST(request: NextRequest) {
             return value;
         });
 
-        // Create a dummy account for simulation
-        // This is just for simulation purposes and won't be used for actual signing
-        const { Account } = await import('@aptos-labs/ts-sdk');
-        const dummyAccount = Account.generate();
+        // Prepare signer for simulation
+        const { Account, Ed25519PublicKey } = await import('@aptos-labs/ts-sdk');
+
+        let senderAddress: string;
+        let simulatorPublicKey: any; // PublicKey type
+
+        // Use provided user details if available, otherwise dummy
+        if (body.signer === 'user' && body.publicKey && body.signerAddress) {
+            senderAddress = body.signerAddress;
+            try {
+                // Construct PublicKey object from hex string
+                simulatorPublicKey = new Ed25519PublicKey(body.publicKey);
+            } catch (e) {
+                console.warn('Invalid public key provided, falling back to dummy', e);
+                const dummy = Account.generate();
+                senderAddress = dummy.accountAddress.toString();
+                simulatorPublicKey = dummy.publicKey;
+            }
+        } else {
+            const dummyAccount = Account.generate();
+            senderAddress = dummyAccount.accountAddress.toString();
+            simulatorPublicKey = dummyAccount.publicKey;
+        }
 
         // Construct the transaction payload
         const transaction = await aptos.transaction.build.simple({
-            sender: dummyAccount.accountAddress,
+            sender: senderAddress,
             data: {
                 function: `${paddedModuleAddress}::${moduleName}::${functionName}`,
                 typeArguments: [],
@@ -115,15 +150,14 @@ export async function POST(request: NextRequest) {
         });
 
         console.log('Simulating transaction:', {
-            sender: dummyAccount.accountAddress.toString(),
+            sender: senderAddress,
             function: `${paddedModuleAddress}::${moduleName}::${functionName}`,
             args: functionArguments,
         });
 
         // Simulate the transaction
-        // Note: This is a dry-run and won't be submitted to the blockchain
         const simulationResponse = await aptos.transaction.simulate.simple({
-            signerPublicKey: dummyAccount.publicKey,
+            signerPublicKey: simulatorPublicKey,
             transaction,
         });
 
@@ -183,6 +217,114 @@ export async function POST(request: NextRequest) {
             }));
         };
 
+        // Parse detailed state diffs from simulation changes (Async with fetching)
+        const enrichStateDiffs = async (changes: any[]): Promise<StateDiffItem[]> => {
+            if (!changes || !Array.isArray(changes)) return [];
+
+            const diffs: StateDiffItem[] = [];
+            const processedKeys = new Set<string>();
+
+            // Limit to 10 changes
+            for (const change of changes.slice(0, 10)) {
+                if (!change.data || change.type === 'write_module') continue;
+
+                const resourceType = change.data?.type || 'unknown';
+                const address = change.address || '';
+                const uniqueKey = `${address}::${resourceType}`;
+
+                if (processedKeys.has(uniqueKey)) continue;
+                processedKeys.add(uniqueKey);
+
+                let beforeData: any = null;
+                let changeType: 'write' | 'delete' | 'create' = 'write';
+
+                if (change.type === 'delete_resource') {
+                    changeType = 'delete';
+                    try {
+                        const resource = await aptos.getAccountResource({
+                            accountAddress: address,
+                            resourceType: resourceType,
+                        });
+                        beforeData = resource;
+                    } catch (e) {
+                        // Ignore error (resource might be gone or unreadable)
+                    }
+                } else if (change.type === 'write_resource') {
+                    try {
+                        const resource = await aptos.getAccountResource({
+                            accountAddress: address,
+                            resourceType: resourceType,
+                        });
+                        beforeData = resource;
+                        changeType = 'write';
+                    } catch (e) {
+                        changeType = 'create';
+                        beforeData = null;
+                    }
+                }
+
+                const fieldDiffs: Array<{ field: string; before: string | null; after: string | null }> = [];
+                const afterData = (change.data?.data || change.data) || {};
+
+                const formatValue = (val: any): string => {
+                    if (val === null || val === undefined) return 'null';
+                    if (typeof val === 'object') {
+                        if ('value' in val) return String(val.value);
+                        if ('vec' in val) return `[${Array.isArray(val.vec) ? val.vec.length : 0} items]`;
+                        return JSON.stringify(val);
+                    }
+                    return String(val);
+                };
+
+                if (changeType === 'delete') {
+                    if (beforeData) {
+                        for (const [key, value] of Object.entries(beforeData)) {
+                            if (key === 'type' || key === 'handle') continue;
+                            fieldDiffs.push({
+                                field: key,
+                                before: formatValue(value),
+                                after: 'deleted',
+                            });
+                        }
+                    } else {
+                        fieldDiffs.push({ field: 'resource', before: 'exists', after: 'deleted' });
+                    }
+                } else {
+                    if (afterData && typeof afterData === 'object') {
+                        for (const [key, value] of Object.entries(afterData)) {
+                            if (key === 'type' || key === 'handle') continue;
+                            const afterValStr = formatValue(value);
+                            let beforeValStr: string | null = null;
+
+                            if (changeType === 'write' && beforeData && key in beforeData) {
+                                beforeValStr = formatValue(beforeData[key]);
+                                if (beforeValStr === afterValStr && key !== 'value' && key !== 'coin') continue;
+                            }
+
+                            fieldDiffs.push({
+                                field: key,
+                                before: beforeValStr,
+                                after: afterValStr,
+                            });
+                        }
+                    }
+                }
+
+                if (fieldDiffs.length > 0) {
+                    diffs.push({
+                        resourceType,
+                        address,
+                        changeType,
+                        fieldDiffs: fieldDiffs.slice(0, 5),
+                    });
+                }
+            }
+            return diffs;
+        };
+
+        // Execute the fetching
+        const stateDiffs = await enrichStateDiffs(rawResult?.changes);
+
         // Build decoded result
         const result: SimulationResult = {
             success: rawResult?.success || false,
@@ -198,6 +340,7 @@ export async function POST(request: NextRequest) {
                 },
                 events: parseEvents(rawResult?.events),
                 stateChanges: parseStateChanges(rawResult?.changes),
+                stateDiffs: stateDiffs,
             },
         };
 
@@ -282,6 +425,7 @@ export async function POST(request: NextRequest) {
                 },
                 events: [],
                 stateChanges: [],
+                stateDiffs: [],
             },
         });
     }
