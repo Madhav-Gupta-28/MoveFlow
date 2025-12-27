@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -9,7 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Play, Zap, Check, AlertCircle } from 'lucide-react';
+import { Play, Zap, Check, AlertCircle, Code } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -159,6 +159,47 @@ export default function CreateTransaction() {
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
     };
 
+    // Load flow from localStorage if flagged
+    useEffect(() => {
+        const flowToLoad = localStorage.getItem('flowToLoad');
+        if (flowToLoad) {
+            const flow = JSON.parse(flowToLoad);
+            setTransactionDraft({
+                module: flow.module,
+                function: flow.function,
+                parameters: flow.parameters,
+                signer: flow.signerType,
+            });
+            // Clear the flag
+            localStorage.removeItem('flowToLoad');
+        }
+    }, []);
+
+    // Save current transaction as a flow
+    const saveFlow = () => {
+        const flowName = prompt('Enter a name for this flow:');
+        if (!flowName) return;
+
+        if (!transactionDraft.module || !transactionDraft.function) {
+            alert('Please select a module and function before saving.');
+            return;
+        }
+
+        const newFlow = {
+            id: `flow_${Date.now()}`,
+            name: flowName,
+            module: transactionDraft.module,
+            function: transactionDraft.function,
+            parameters: transactionDraft.parameters,
+            signerType: transactionDraft.signer,
+            createdAt: Date.now(),
+        };
+
+        const existingFlows = JSON.parse(localStorage.getItem('savedFlows') || '[]');
+        localStorage.setItem('savedFlows', JSON.stringify([newFlow, ...existingFlows]));
+
+        alert(`Flow "${flowName}" saved successfully!`);
+    };
 
     // Derived transaction preview - computed from transactionDraft
     const transactionPreview = useMemo<TransactionPreview>(() => {
@@ -498,6 +539,17 @@ export default function CreateTransaction() {
                     >
                         <Play className="w-4 h-4" />
                         {isSimulating ? 'Simulating...' : 'Simulate Transaction'}
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full gap-2"
+                        onClick={saveFlow}
+                        disabled={!transactionDraft.module || !transactionDraft.function}
+                    >
+                        <Code className="w-4 h-4" />
+                        Save as Flow
                     </Button>
                 </div>
 

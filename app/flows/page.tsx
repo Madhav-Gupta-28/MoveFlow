@@ -1,41 +1,46 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Play, Code, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
-const savedFlows = [
-    {
-        id: '1',
-        name: 'Daily Counter Increment',
-        module: '0xabc::counter',
-        function: 'increment',
-        params: [],
-        createdAt: '2024-01-15',
-    },
-    {
-        id: '2',
-        name: 'Vault Deposit 100',
-        module: '0xabc::vault',
-        function: 'deposit',
-        params: [{ name: 'amount', value: '100' }],
-        createdAt: '2024-01-14',
-    },
-    {
-        id: '3',
-        name: 'Token Transfer',
-        module: '0xdef::token',
-        function: 'mint',
-        params: [
-            { name: 'to', value: '0x123...abc' },
-            { name: 'amount', value: '1000' },
-        ],
-        createdAt: '2024-01-13',
-    },
-];
+interface SavedFlow {
+    id: string;
+    name: string;
+    module: string;
+    function: string;
+    parameters: Record<string, any>;
+    signerType: 'user' | 'agent';
+    createdAt: number;
+}
 
 export default function SavedFlows() {
+    const router = useRouter();
+    const [savedFlows, setSavedFlows] = useState<SavedFlow[]>([]);
+
+    useEffect(() => {
+        // Load saved flows from localStorage
+        const stored = localStorage.getItem('savedFlows');
+        if (stored) {
+            setSavedFlows(JSON.parse(stored));
+        }
+    }, []);
+
+    const loadFlow = (flow: SavedFlow) => {
+        // Store the flow to be loaded
+        localStorage.setItem('flowToLoad', JSON.stringify(flow));
+        // Navigate to create page
+        router.push('/create');
+    };
+
+    const formatDate = (timestamp: number) => {
+        return new Date(timestamp).toLocaleDateString();
+    };
+
     return (
         <div className="p-8 animate-fade-in">
             <div className="mb-8">
@@ -51,7 +56,9 @@ export default function SavedFlows() {
                         <p className="text-sm text-muted-foreground mb-4">
                             Create a transaction and save it as a reusable flow
                         </p>
-                        <Button variant="outline">Create Transaction</Button>
+                        <Link href="/create">
+                            <Button variant="outline">Create Transaction</Button>
+                        </Link>
                     </CardContent>
                 </Card>
             ) : (
@@ -64,38 +71,46 @@ export default function SavedFlows() {
                         >
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between">
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 flex-1">
                                         <div>
                                             <h3 className="font-semibold text-lg">{flow.name}</h3>
                                             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                                                 <Clock className="w-3 h-3" />
-                                                Created {flow.createdAt}
+                                                Created {formatDate(flow.createdAt)}
                                             </div>
                                         </div>
 
                                         <div className="flex flex-wrap gap-2">
-                                            <Badge variant="secondary" className="font-mono">
+                                            <Badge variant="secondary" className="font-mono text-xs">
                                                 {flow.module}
                                             </Badge>
-                                            <Badge variant="outline" className="font-mono">
+                                            <Badge variant="outline" className="font-mono text-xs">
                                                 {flow.function}()
+                                            </Badge>
+                                            <Badge variant="outline" className="text-xs">
+                                                {flow.signerType === 'user' ? 'User Signer' : 'Agent Signer'}
                                             </Badge>
                                         </div>
 
-                                        {flow.params.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 text-sm">
-                                                {flow.params.map((param, i) => (
-                                                    <span key={i} className="text-muted-foreground">
-                                                        <span className="text-foreground">{param.name}</span>: {param.value}
+                                        {Object.keys(flow.parameters).length > 0 && (
+                                            <div className="flex flex-wrap gap-3 text-sm">
+                                                {Object.entries(flow.parameters).map(([key, value]) => (
+                                                    <span key={key} className="text-muted-foreground">
+                                                        <span className="text-foreground font-medium">{key}</span>: {String(value)}
                                                     </span>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
 
-                                    <Button variant="default" size="sm" className="gap-2">
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="gap-2"
+                                        onClick={() => loadFlow(flow)}
+                                    >
                                         <Play className="w-3 h-3" />
-                                        Run Flow
+                                        Load Flow
                                     </Button>
                                 </div>
                             </CardContent>
