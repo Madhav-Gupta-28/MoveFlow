@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Play, Zap, Check, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -104,9 +105,31 @@ interface SimulationResult {
     };
 }
 
+interface TransactionReceipt {
+    id: string;
+    timestamp: number;
+    module: string;
+    function: string;
+    parameters: Record<string, any>;
+    signer: string;
+    transactionHash: string;
+    gasUsed: string;
+    status: 'success' | 'failed';
+    stateChanges?: Array<{
+        resourceType: string;
+        address: string;
+        changeType: 'write' | 'delete' | 'create';
+        fieldDiffs: Array<{
+            field: string;
+            before: string | null;
+            after: string | null;
+        }>;
+    }>;
+}
+
 export default function CreateTransaction() {
     // Wallet connection state
-    const { connected, account } = useWallet();
+    const { connected, account, signAndSubmitTransaction } = useWallet();
 
     // Single state object for all transaction builder inputs
     const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>({
@@ -121,6 +144,11 @@ export default function CreateTransaction() {
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationError, setSimulationError] = useState<string | null>(null);
     const [selectedStateDiff, setSelectedStateDiff] = useState<any | null>(null);
+
+    // Execution state
+    const [isExecuting, setIsExecuting] = useState(false);
+    const [executionResult, setExecutionResult] = useState<any | null>(null);
+    const [executionError, setExecutionError] = useState<string | null>(null);
 
     const functions = transactionDraft.module ? functionsByModule[transactionDraft.module] || [] : [];
     const selectedFunctionData = functions.find((f) => f.name === transactionDraft.function);
@@ -270,6 +298,80 @@ export default function CreateTransaction() {
             setSimulationError(error.message || 'Failed to simulate transaction');
         } finally {
             setIsSimulating(false);
+        }
+    };
+
+    // Execute transaction on Movement Testnet
+    const handleExecute = async () => {
+        if (!connected || !account) {
+            setExecutionError('Please connect your wallet first');
+            return;
+        }
+
+        if (!transactionDraft.module || !transactionDraft.function) {
+            setExecutionError('Please select a module and function');
+            return;
+        }
+
+        setIsExecuting(true);
+        setExecutionError(null);
+        setExecutionResult(null);
+
+        try {
+            // Build the same transaction payload as simulation
+            const [moduleAddress, moduleName] = transactionDraft.module.split('::');
+            const functionName = transactionDraft.function;
+
+            // Convert parameters to proper types
+            const functionArguments = Object.values(transactionDraft.parameters);
+
+            // Sign and submit transaction
+            const response = await signAndSubmitTransaction({
+                data: {
+                    function: `${moduleAddress}::${moduleName}::${functionName}`,
+                    typeArguments: [],
+                    functionArguments: functionArguments,
+                }
+            });
+
+            console.log('Transaction submitted:', response);
+            setExecutionResult(response);
+
+            // Wait for transaction confirmation and fetch details
+            const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk');
+            const config = new AptosConfig({ network: Network.CUSTOM, fullnode: 'https://aptos.testnet.porto.movementlabs.xyz/v1' });
+            const aptos = new Aptos(config);
+
+            // Wait for transaction
+            await aptos.waitForTransaction({ transactionHash: response.hash });
+
+            //Fetch transaction details
+            const txnDetails = await aptos.getTransactionByHash({ transactionHash: response.hash });
+
+            // Create receipt
+            const receipt: TransactionReceipt = {
+                id: response.hash,
+                timestamp: Date.now(),
+                module: transactionDraft.module,
+                function: transactionDraft.function,
+                parameters: transactionDraft.parameters,
+                signer: account.address.toString(),
+                transactionHash: response.hash,
+                gasUsed: (txnDetails as any).gas_used || '0',
+                status: 'success',
+                stateChanges: simulationResult?.decoded?.stateDiffs || [],
+            };
+
+            // Store in localStorage
+            const existingReceipts = JSON.parse(localStorage.getItem('transactionReceipts') || '[]');
+            localStorage.setItem('transactionReceipts', JSON.stringify([receipt, ...existingReceipts]));
+
+            console.log('Receipt created:', receipt);
+        } catch (error: any) {
+            console.error('Execution error:', error);
+            setExecutionError(error.message || 'Failed to execute transaction');
+        } finally {
+            setIsExecuting(false);
         }
     };
 
@@ -575,11 +677,52 @@ export default function CreateTransaction() {
 
                             {/* Execute Section */}
                             <Card className="border-border">
-                                <CardContent className="p-6">
-                                    <Button variant="default" size="lg" className="w-full gap-2 mb-3">
-                                        <Zap className="w-4 h-4" />
-                                        Execute on Movement Testnet
+                                <CardContent className="p-6 space-y-4">
+                                    <Button
+                                        variant="default"
+                                        size="lg"
+                                        className="w-full gap-2"
+                                        onClick={handleExecute}
+                                        disabled={!connected || isExecuting || !transactionDraft.module || !transactionDraft.function}
+                                    >
+                                        {isExecuting ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Executing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Zap className="w-4 h-4" />
+                                                Execute on Movement Testnet
+                                            </>
+                                        )}
                                     </Button>
+
+                                    {executionError && (
+                                        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                                            {executionError}
+                                        </div>
+                                    )}
+
+                                    {executionResult && (
+                                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 space-y-3">
+                                            <div className="flex items-center gap-2 text-green-500">
+                                                <Check className="w-5 h-5" />
+                                                <span className="font-medium">Transaction Confirmed!</span>
+                                            </div>
+                                            <div className="text-sm space-y-1">
+                                                <div className="font-mono text-xs break-all text-muted-foreground">
+                                                    {executionResult.hash}
+                                                </div>
+                                            </div>
+                                            <Link href="/receipts">
+                                                <Button size="sm" className="w-full" variant="outline">
+                                                    View Receipt →
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    )}
+
                                     <p className="text-xs text-center text-muted-foreground">
                                         Execution will generate a permanent on-chain receipt
                                     </p>
