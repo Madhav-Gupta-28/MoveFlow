@@ -175,15 +175,22 @@ export default function CreateTransaction() {
         }
     }, []);
 
+    // Save flow state
+    const [saveFlowDialogOpen, setSaveFlowDialogOpen] = useState(false);
+    const [flowName, setFlowName] = useState('');
+    const [saveFlowSuccess, setSaveFlowSuccess] = useState(false);
+
     // Save current transaction as a flow
     const saveFlow = () => {
-        const flowName = prompt('Enter a name for this flow:');
-        if (!flowName) return;
-
         if (!transactionDraft.module || !transactionDraft.function) {
             alert('Please select a module and function before saving.');
             return;
         }
+        setSaveFlowDialogOpen(true);
+    };
+
+    const confirmSaveFlow = () => {
+        if (!flowName.trim()) return;
 
         const newFlow = {
             id: `flow_${Date.now()}`,
@@ -198,8 +205,14 @@ export default function CreateTransaction() {
         const existingFlows = JSON.parse(localStorage.getItem('savedFlows') || '[]');
         localStorage.setItem('savedFlows', JSON.stringify([newFlow, ...existingFlows]));
 
-        alert(`Flow "${flowName}" saved successfully!`);
+        setSaveFlowDialogOpen(false);
+        setSaveFlowSuccess(true);
+        setFlowName('');
+
+        // Hide success message after 3 seconds
+        setTimeout(() => setSaveFlowSuccess(false), 3000);
     };
+
 
     // Derived transaction preview - computed from transactionDraft
     const transactionPreview = useMemo<TransactionPreview>(() => {
@@ -833,6 +846,69 @@ export default function CreateTransaction() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Save Flow Dialog */}
+            <Dialog open={saveFlowDialogOpen} onOpenChange={setSaveFlowDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Save as Flow</DialogTitle>
+                        <DialogDescription>
+                            Save this transaction as a reusable template
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="flowName">Flow Name</Label>
+                            <Input
+                                id="flowName"
+                                placeholder="e.g., Daily Counter Increment"
+                                value={flowName}
+                                onChange={(e) => setFlowName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && flowName.trim()) {
+                                        confirmSaveFlow();
+                                    }
+                                }}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setSaveFlowDialogOpen(false);
+                                    setFlowName('');
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={confirmSaveFlow}
+                                disabled={!flowName.trim()}
+                            >
+                                Save Flow
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Success Notification */}
+            {saveFlowSuccess && (
+                <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
+                    <Card className="border-green-500/50 bg-green-500/10">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <Check className="w-5 h-5 text-green-500" />
+                            <div>
+                                <p className="font-medium text-green-500">Flow Saved!</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Your transaction template has been saved
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
