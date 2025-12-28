@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 
@@ -15,6 +16,7 @@ interface SimulationRequest {
     module: string;
     function: string;
     parameters: Record<string, string>;
+    typeArguments?: string[];
     signer: 'user' | 'agent';
     publicKey?: string;
     signerAddress?: string;
@@ -68,7 +70,7 @@ interface SimulationResult {
 export async function POST(request: NextRequest) {
     try {
         const body: SimulationRequest = await request.json();
-        const { module, function: functionName, parameters } = body;
+        const { module, function: functionName, parameters, typeArguments = [] } = body;
 
         // Validate input
         if (!module || !functionName) {
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
             sender: senderAddress,
             data: {
                 function: `${paddedModuleAddress}::${moduleName}::${functionName}`,
-                typeArguments: [],
+                typeArguments: typeArguments,
                 functionArguments,
             },
         });
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
             sender: senderAddress,
             function: `${paddedModuleAddress}::${moduleName}::${functionName}`,
             args: functionArguments,
+            typeArguments: typeArguments,
         });
 
         // Simulate the transaction

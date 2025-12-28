@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -28,7 +29,7 @@ import {
 const modules = [
     { value: '0x1::coin', label: '0x1::coin (Standard Coin Module)' },
     { value: '0x1::account', label: '0x1::account (Account Module)' },
-    { value: '0x1::aptos_account', label: '0x1::aptos_account (Aptos Account)' },
+    { value: '0x1::aptos_account', label: '0x1::aptos_account (Movement Account)' },
 ];
 
 const functionsByModule: Record<string, { name: string; params: { name: string; type: string }[] }[]> = {
@@ -131,6 +132,9 @@ export default function CreateTransaction() {
     // Wallet connection state
     const { connected, account, signAndSubmitTransaction } = useWallet();
 
+    // Mode toggle: 'builtin' or 'custom'
+    const [contractMode, setContractMode] = useState<'builtin' | 'custom'>('builtin');
+
     // Single state object for all transaction builder inputs
     const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>({
         module: '',
@@ -138,6 +142,37 @@ export default function CreateTransaction() {
         parameters: {},
         signer: 'user',
     });
+
+    // Custom contract state
+    const [customContract, setCustomContract] = useState({
+        moduleAddress: '',        // e.g., "0x1"
+        moduleName: '',           // e.g., "coin"
+        functionName: '',         // e.g., "transfer"
+        typeArguments: '',        // e.g., "0x1::aptos_coin::AptosCoin"
+        parameters: [] as { name: string; type: string; value: string }[],
+    });
+
+    // Add/remove custom parameters
+    const addCustomParameter = () => {
+        setCustomContract(prev => ({
+            ...prev,
+            parameters: [...prev.parameters, { name: `param${prev.parameters.length}`, type: 'address', value: '' }]
+        }));
+    };
+
+    const removeCustomParameter = (index: number) => {
+        setCustomContract(prev => ({
+            ...prev,
+            parameters: prev.parameters.filter((_, i) => i !== index)
+        }));
+    };
+
+    const updateCustomParameter = (index: number, field: 'name' | 'type' | 'value', value: string) => {
+        setCustomContract(prev => ({
+            ...prev,
+            parameters: prev.parameters.map((p, i) => i === index ? { ...p, [field]: value } : p)
+        }));
+    };
 
     // Simulation state
     const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
@@ -164,12 +199,52 @@ export default function CreateTransaction() {
         const flowToLoad = localStorage.getItem('flowToLoad');
         if (flowToLoad) {
             const flow = JSON.parse(flowToLoad);
-            setTransactionDraft({
-                module: flow.module,
-                function: flow.function,
-                parameters: flow.parameters,
-                signer: flow.signerType,
-            });
+
+            // List of built-in modules
+            const builtInModules = ['0x1::coin', '0x1::account', '0x1::aptos_account'];
+
+            // Check if this is a custom contract flow
+            const isCustomFlow = flow.isCustom === true || !builtInModules.includes(flow.module);
+
+            if (isCustomFlow) {
+                // Switch to custom mode
+                setContractMode('custom');
+
+                // If we have stored customContract data, use it directly
+                if (flow.customContract) {
+                    setCustomContract(flow.customContract);
+                } else {
+                    // Parse module string like "0xabc::mymodule" into address and name
+                    const moduleParts = flow.module.split('::');
+                    const moduleAddress = moduleParts[0] || '';
+                    const moduleName = moduleParts.slice(1).join('::') || '';
+
+                    // Convert parameters object to array format
+                    const parametersArray = Object.entries(flow.parameters || {}).map(([name, value]) => ({
+                        name,
+                        type: 'string', // Default type since we don't have it stored
+                        value: String(value),
+                    }));
+
+                    setCustomContract({
+                        moduleAddress,
+                        moduleName,
+                        functionName: flow.function,
+                        typeArguments: flow.typeArguments || '',
+                        parameters: parametersArray,
+                    });
+                }
+            } else {
+                // Load as built-in flow
+                setContractMode('builtin');
+                setTransactionDraft({
+                    module: flow.module,
+                    function: flow.function,
+                    parameters: flow.parameters,
+                    signer: flow.signerType,
+                });
+            }
+
             // Clear the flag
             localStorage.removeItem('flowToLoad');
         }
@@ -192,18 +267,44 @@ export default function CreateTransaction() {
         setSaveFlowDialogOpen(true);
     };
 
+    // Save custom contract as a flow
+    const saveCustomFlow = () => {
+        if (!customContract.moduleAddress || !customContract.moduleName || !customContract.functionName) {
+            alert('Please fill in the contract details before saving.');
+            return;
+        }
+        setSaveFlowDialogOpen(true);
+    };
+
     const confirmSaveFlow = () => {
         if (!flowName.trim()) return;
 
-        const newFlow = {
-            id: `flow_${Date.now()}`,
-            name: flowName,
-            module: transactionDraft.module,
-            function: transactionDraft.function,
-            parameters: transactionDraft.parameters,
-            signerType: transactionDraft.signer,
-            createdAt: Date.now(),
-        };
+        let newFlow;
+        if (contractMode === 'custom') {
+            // Save custom contract flow
+            newFlow = {
+                id: `flow_${Date.now()}`,
+                name: flowName,
+                module: `${customContract.moduleAddress}::${customContract.moduleName}`,
+                function: customContract.functionName,
+                parameters: customContract.parameters.reduce((acc, p) => ({ ...acc, [p.name]: p.value }), {}),
+                typeArguments: customContract.typeArguments,
+                isCustom: true,
+                customContract: customContract, // Store full custom contract for reload
+                createdAt: Date.now(),
+            };
+        } else {
+            // Save built-in flow
+            newFlow = {
+                id: `flow_${Date.now()}`,
+                name: flowName,
+                module: transactionDraft.module,
+                function: transactionDraft.function,
+                parameters: transactionDraft.parameters,
+                signerType: transactionDraft.signer,
+                createdAt: Date.now(),
+            };
+        }
 
         const existingFlows = JSON.parse(localStorage.getItem('savedFlows') || '[]');
         localStorage.setItem('savedFlows', JSON.stringify([newFlow, ...existingFlows]));
@@ -314,6 +415,70 @@ export default function CreateTransaction() {
         }));
     };
 
+    // Simulate custom transaction
+    const handleCustomSimulate = async () => {
+        setIsSimulating(true);
+        setSimulationError(null);
+        setSimulationResult(null);
+
+        try {
+            // Parse parameters
+            const formattedParams: Record<string, any> = {};
+            customContract.parameters.forEach(p => {
+                if (p.value) {
+                    formattedParams[p.name] = p.type === 'u64' || p.type === 'u128' ? Number(p.value) : p.value;
+                }
+            });
+
+            // Construct full function identifier
+            const fullFunction = `${customContract.moduleAddress}::${customContract.moduleName}::${customContract.functionName}`;
+
+            // Parse type arguments
+            const typeArguments = customContract.typeArguments
+                ? customContract.typeArguments.split(',').map(t => t.trim()).filter(Boolean)
+                : [];
+
+            const requestBody = {
+                module: `${customContract.moduleAddress}::${customContract.moduleName}`,
+                function: customContract.functionName,
+                parameters: formattedParams,
+                typeArguments, // Pass type arguments if API supports it
+                signer: 'user', // Default to user signer for custom
+                publicKey: (connected && account?.publicKey) ? account.publicKey.toString() : undefined,
+                signerAddress: (connected && account?.address) ? account.address.toString() : undefined
+            };
+
+            const response = await fetch('/api/simulate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            const data = await response.json();
+
+            // If we got decoded data, use it (even for errors)
+            if (data.decoded) {
+                setSimulationResult(data);
+                return;
+            }
+
+            // Fallback for old-style errors without decoded data
+            if (!response.ok || !data.success) {
+                setSimulationError(data.error || 'Simulation failed');
+                return;
+            }
+
+            setSimulationResult(data);
+        } catch (error: any) {
+            console.error('Simulation error:', error);
+            setSimulationError(error.message || 'Failed to simulate transaction');
+        } finally {
+            setIsSimulating(false);
+        }
+    };
+
     // Simulate transaction on Movement Testnet
     const handleSimulate = async () => {
         setIsSimulating(true);
@@ -359,13 +524,18 @@ export default function CreateTransaction() {
     };
 
     // Execute transaction on Movement Testnet
+    // Execute transaction on Movement Testnet
     const handleExecute = async () => {
         if (!connected || !account) {
             setExecutionError('Please connect your wallet first');
             return;
         }
 
-        if (!transactionDraft.module || !transactionDraft.function) {
+        const isCustom = contractMode === 'custom';
+        const moduleStr = isCustom ? `${customContract.moduleAddress}::${customContract.moduleName}` : transactionDraft.module;
+        const functionStr = isCustom ? customContract.functionName : transactionDraft.function;
+
+        if (!moduleStr || !functionStr) {
             setExecutionError('Please select a module and function');
             return;
         }
@@ -375,19 +545,35 @@ export default function CreateTransaction() {
         setExecutionResult(null);
 
         try {
-            // Build the same transaction payload as simulation
-            const [moduleAddress, moduleName] = transactionDraft.module.split('::');
-            const functionName = transactionDraft.function;
+            // Build transaction payload
+            let functionId = '';
+            let typeArgs: string[] = [];
+            let args: any[] = [];
 
-            // Convert parameters to proper types
-            const functionArguments = Object.values(transactionDraft.parameters);
+            if (isCustom) {
+                functionId = `${moduleStr}::${functionStr}`;
+                typeArgs = customContract.typeArguments
+                    ? customContract.typeArguments.split(',').map(t => t.trim()).filter(Boolean)
+                    : [];
+
+                // Parse custom parameters
+                args = customContract.parameters.map(p => {
+                    if (p.type === 'u64' || p.type === 'u128') return Number(p.value);
+                    return p.value;
+                });
+            } else {
+                // Built-in mode
+                const [addr, mod] = transactionDraft.module.split('::');
+                functionId = `${addr}::${mod}::${transactionDraft.function}`;
+                args = Object.values(transactionDraft.parameters);
+            }
 
             // Sign and submit transaction
             const response = await signAndSubmitTransaction({
                 data: {
-                    function: `${moduleAddress}::${moduleName}::${functionName}`,
-                    typeArguments: [],
-                    functionArguments: functionArguments,
+                    function: functionId as any, // Cast to any to satisfy specific string template type
+                    typeArguments: typeArgs,
+                    functionArguments: args,
                 }
             });
 
@@ -395,13 +581,14 @@ export default function CreateTransaction() {
             setExecutionResult(response);
 
             // Create receipt immediately (before waiting for confirmation)
-            // This ensures we save even if CORS blocks the confirmation fetch
             const receipt: TransactionReceipt = {
                 id: response.hash,
                 timestamp: Date.now(),
-                module: transactionDraft.module,
-                function: transactionDraft.function,
-                parameters: transactionDraft.parameters,
+                module: moduleStr,
+                function: functionStr,
+                parameters: isCustom
+                    ? customContract.parameters.reduce((acc, p) => ({ ...acc, [p.name]: p.value }), {})
+                    : transactionDraft.parameters,
                 signer: account.address.toString(),
                 transactionHash: response.hash,
                 gasUsed: simulationResult?.gasUsed?.toString() || '0', // Use simulation gas as fallback
@@ -488,142 +675,336 @@ export default function CreateTransaction() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column: Transaction Builder */}
                     <div className="space-y-6">
-                        <Card className="border-border">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">1</span>
-                                    Select Module
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    Choose a Move module to interact with. Each module contains functions for specific operations like transfers or account creation.
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <Select value={transactionDraft.module} onValueChange={handleModuleChange}>
-                                    <SelectTrigger className="bg-background">
-                                        <SelectValue placeholder="Choose a module..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-popover border-border">
-                                        {modules.map((m) => (
-                                            <SelectItem key={m.value} value={m.value}>
-                                                <span className="font-mono text-sm">{m.label}</span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </CardContent>
-                        </Card>
+                        {/* Mode Toggle */}
+                        <div className="flex rounded-lg bg-muted p-1">
+                            <button
+                                onClick={() => setContractMode('builtin')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${contractMode === 'builtin'
+                                    ? 'bg-white text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                            >
+                                Built-in Contracts
+                            </button>
+                            <button
+                                onClick={() => setContractMode('custom')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${contractMode === 'custom'
+                                    ? 'bg-white text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                            >
+                                Custom Contract
+                            </button>
+                        </div>
 
-                        <Card className="border-border">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">2</span>
-                                    Select Function
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    Pick the function you want to call. The signature shows the required parameter types.
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <Select
-                                    value={transactionDraft.function}
-                                    onValueChange={handleFunctionChange}
-                                    disabled={!transactionDraft.module}
-                                >
-                                    <SelectTrigger className="bg-background">
-                                        <SelectValue placeholder={transactionDraft.module ? 'Choose a function...' : 'Select module first'} />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-popover border-border">
-                                        {functions.map((f) => (
-                                            <SelectItem key={f.name} value={f.name}>
-                                                <span className="font-mono text-sm">
-                                                    {f.name}({f.params.map(p => p.type).join(', ')})
-                                                </span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-border">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">3</span>
-                                    Parameters
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    Enter the values for each parameter. Hover over types for format hints.
-                                </p>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {selectedFunctionData?.params.length ? (
-                                    selectedFunctionData.params.map((param) => (
-                                        <div key={param.name} className="space-y-2">
-                                            <Label className="text-sm flex items-center gap-2">
-                                                {param.name}
-                                                <Badge variant="secondary" className="text-xs">{param.type}</Badge>
-                                            </Label>
+                        {contractMode === 'custom' ? (
+                            /* Custom Contract Form */
+                            <>
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-[#2563EB] text-white text-xs font-mono flex items-center justify-center">1</span>
+                                            Contract Address
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Enter the deployed contract&apos;s module address and name (e.g., 0x1::coin)
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-sm">Module Address</Label>
                                             <Input
-                                                placeholder={`Enter ${param.type}...`}
-                                                value={transactionDraft.parameters[param.name] || ''}
-                                                onChange={(e) => handleParamChange(param.name, e.target.value)}
-                                                className="font-mono bg-background"
+                                                placeholder="0x1 or 0xabc123..."
+                                                value={customContract.moduleAddress}
+                                                onChange={(e) => setCustomContract(prev => ({ ...prev, moduleAddress: e.target.value }))}
+                                                className="font-mono"
                                             />
                                         </div>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">
-                                        {transactionDraft.function ? 'No parameters required' : 'Select a function to see parameters'}
-                                    </p>
-                                )}
-                            </CardContent>
-                        </Card>
+                                        <div className="space-y-2">
+                                            <Label className="text-sm">Module Name</Label>
+                                            <Input
+                                                placeholder="coin, account, my_module..."
+                                                value={customContract.moduleName}
+                                                onChange={(e) => setCustomContract(prev => ({ ...prev, moduleName: e.target.value }))}
+                                                className="font-mono"
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
-                        <Card className="border-border">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-accent text-xs font-mono flex items-center justify-center">4</span>
-                                    Signer
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <RadioGroup value={transactionDraft.signer} onValueChange={handleSignerChange} className="space-y-3">
-                                    <div className="flex items-center space-x-3">
-                                        <RadioGroupItem value="user" id="user" />
-                                        <Label htmlFor="user" className="text-sm cursor-pointer">User Wallet</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-3">
-                                        <RadioGroupItem value="agent" id="agent" />
-                                        <Label htmlFor="agent" className="text-sm cursor-pointer">Agent Signer</Label>
-                                    </div>
-                                </RadioGroup>
-                            </CardContent>
-                        </Card>
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-[#2563EB] text-white text-xs font-mono flex items-center justify-center">2</span>
+                                            Function
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Enter the function name and optional type arguments
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-sm">Function Name</Label>
+                                            <Input
+                                                placeholder="transfer, mint, create_account..."
+                                                value={customContract.functionName}
+                                                onChange={(e) => setCustomContract(prev => ({ ...prev, functionName: e.target.value }))}
+                                                className="font-mono"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-sm">Type Arguments (optional)</Label>
+                                            <Input
+                                                placeholder="0x1::aptos_coin::AptosCoin"
+                                                value={customContract.typeArguments}
+                                                onChange={(e) => setCustomContract(prev => ({ ...prev, typeArguments: e.target.value }))}
+                                                className="font-mono text-sm"
+                                            />
+                                            <p className="text-xs text-muted-foreground">Comma-separated for multiple types</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
-                        <Button
-                            variant="default"
-                            size="lg"
-                            className="w-full gap-2"
-                            onClick={handleSimulate}
-                            disabled={!transactionDraft.module || !transactionDraft.function || isSimulating}
-                        >
-                            <Play className="w-4 h-4" />
-                            {isSimulating ? 'Simulating...' : 'Simulate Transaction'}
-                        </Button>
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-[#2563EB] text-white text-xs font-mono flex items-center justify-center">3</span>
+                                            Parameters
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Add function parameters with their types and values
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {customContract.parameters.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-lg">
+                                                No parameters added yet. Click below to add one.
+                                            </p>
+                                        ) : (
+                                            customContract.parameters.map((param, index) => (
+                                                <div key={index} className="flex gap-2 items-end">
+                                                    <div className="flex-1 space-y-1">
+                                                        <Label className="text-xs">Name</Label>
+                                                        <Input
+                                                            placeholder="to"
+                                                            value={param.name}
+                                                            onChange={(e) => updateCustomParameter(index, 'name', e.target.value)}
+                                                            className="text-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="w-32 space-y-1">
+                                                        <Label className="text-xs">Type</Label>
+                                                        <Select
+                                                            value={param.type}
+                                                            onValueChange={(v) => updateCustomParameter(index, 'type', v)}
+                                                        >
+                                                            <SelectTrigger className="text-sm">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="address">address</SelectItem>
+                                                                <SelectItem value="u64">u64</SelectItem>
+                                                                <SelectItem value="u128">u128</SelectItem>
+                                                                <SelectItem value="bool">bool</SelectItem>
+                                                                <SelectItem value="string">string</SelectItem>
+                                                                <SelectItem value="vector<u8>">vector&lt;u8&gt;</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="flex-1 space-y-1">
+                                                        <Label className="text-xs">Value</Label>
+                                                        <Input
+                                                            placeholder={param.type === 'address' ? '0x...' : param.type === 'u64' ? '1000000' : '...'}
+                                                            value={param.value}
+                                                            onChange={(e) => updateCustomParameter(index, 'value', e.target.value)}
+                                                            className="font-mono text-sm"
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => removeCustomParameter(index)}
+                                                        className="text-destructive hover:text-destructive"
+                                                    >
+                                                        ✕
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        )}
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={addCustomParameter}
+                                            className="w-full"
+                                        >
+                                            + Add Parameter
+                                        </Button>
+                                    </CardContent>
+                                </Card>
 
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            className="w-full gap-2"
-                            onClick={saveFlow}
-                            disabled={!transactionDraft.module || !transactionDraft.function}
-                        >
-                            <Code className="w-4 h-4" />
-                            Save as Flow
-                        </Button>
+                                {/* Action Buttons for Custom Mode */}
+                                <Button
+                                    variant="default"
+                                    size="lg"
+                                    className="w-full gap-2"
+                                    onClick={handleCustomSimulate}
+                                    disabled={!customContract.moduleAddress || !customContract.moduleName || !customContract.functionName || isSimulating}
+                                >
+                                    <Play className="w-4 h-4" />
+                                    {isSimulating ? 'Simulating...' : 'Simulate Transaction'}
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="w-full gap-2"
+                                    onClick={saveCustomFlow}
+                                    disabled={!customContract.moduleAddress || !customContract.moduleName || !customContract.functionName}
+                                >
+                                    <Code className="w-4 h-4" />
+                                    Save as Flow
+                                </Button>
+                            </>
+                        ) : (
+                            /* Built-in Contracts Form (existing) */
+                            <>
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-[#2563EB] text-white text-xs font-mono flex items-center justify-center">1</span>
+                                            Select Module
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Choose a Move module to interact with. Each module contains functions for specific operations like transfers or account creation.
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Select value={transactionDraft.module} onValueChange={handleModuleChange}>
+                                            <SelectTrigger className="bg-background">
+                                                <SelectValue placeholder="Choose a module..." />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-popover border-border">
+                                                {modules.map((m) => (
+                                                    <SelectItem key={m.value} value={m.value}>
+                                                        <span className="font-mono text-sm">{m.label}</span>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">2</span>
+                                            Select Function
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Pick the function you want to call. The signature shows the required parameter types.
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Select
+                                            value={transactionDraft.function}
+                                            onValueChange={handleFunctionChange}
+                                            disabled={!transactionDraft.module}
+                                        >
+                                            <SelectTrigger className="bg-background">
+                                                <SelectValue placeholder={transactionDraft.module ? 'Choose a function...' : 'Select module first'} />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-popover border-border">
+                                                {functions.map((f) => (
+                                                    <SelectItem key={f.name} value={f.name}>
+                                                        <span className="font-mono text-sm">
+                                                            {f.name}({f.params.map(p => p.type).join(', ')})
+                                                        </span>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">3</span>
+                                            Parameters
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Enter the values for each parameter. Hover over types for format hints.
+                                        </p>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {selectedFunctionData?.params.length ? (
+                                            selectedFunctionData.params.map((param) => (
+                                                <div key={param.name} className="space-y-2">
+                                                    <Label className="text-sm flex items-center gap-2">
+                                                        {param.name}
+                                                        <Badge variant="secondary" className="text-xs">{param.type}</Badge>
+                                                    </Label>
+                                                    <Input
+                                                        placeholder={`Enter ${param.type}...`}
+                                                        value={transactionDraft.parameters[param.name] || ''}
+                                                        onChange={(e) => handleParamChange(param.name, e.target.value)}
+                                                        className="font-mono bg-background"
+                                                    />
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">
+                                                {transactionDraft.function ? 'No parameters required' : 'Select a function to see parameters'}
+                                            </p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-border">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-accent text-xs font-mono flex items-center justify-center">4</span>
+                                            Signer
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <RadioGroup value={transactionDraft.signer} onValueChange={handleSignerChange} className="space-y-3">
+                                            <div className="flex items-center space-x-3">
+                                                <RadioGroupItem value="user" id="user" />
+                                                <Label htmlFor="user" className="text-sm cursor-pointer">User Wallet</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <RadioGroupItem value="agent" id="agent" />
+                                                <Label htmlFor="agent" className="text-sm cursor-pointer">Agent Signer</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </CardContent>
+                                </Card>
+
+                                <Button
+                                    variant="default"
+                                    size="lg"
+                                    className="w-full gap-2"
+                                    onClick={handleSimulate}
+                                    disabled={!transactionDraft.module || !transactionDraft.function || isSimulating}
+                                >
+                                    <Play className="w-4 h-4" />
+                                    {isSimulating ? 'Simulating...' : 'Simulate Transaction'}
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="w-full gap-2"
+                                    onClick={saveFlow}
+                                    disabled={!transactionDraft.module || !transactionDraft.function}
+                                >
+                                    <Code className="w-4 h-4" />
+                                    Save as Flow
+                                </Button>
+                            </>
+                        )}
                     </div>
-
                     {/* Right Column: Preview & Results */}
                     <div className="space-y-6">
                         {/* Transaction Preview */}
@@ -823,7 +1204,7 @@ export default function CreateTransaction() {
                                             size="lg"
                                             className="w-full gap-2"
                                             onClick={handleExecute}
-                                            disabled={!connected || isExecuting || !transactionDraft.module || !transactionDraft.function}
+                                            disabled={!connected || isExecuting || (contractMode === 'custom' ? (!customContract.moduleAddress || !customContract.moduleName || !customContract.functionName) : (!transactionDraft.module || !transactionDraft.function))}
                                         >
                                             {isExecuting ? (
                                                 <>
@@ -1023,9 +1404,9 @@ export default function CreateTransaction() {
                     <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
                         <Card className="border-slate-8000/50 bg-slate-8000/10">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <Check className="w-5 h-5 text-slate-8000" />
+                                <Check className="w-5 h-5 text-[#2563EB]" />
                                 <div>
-                                    <p className="font-medium text-slate-8000">Flow Saved!</p>
+                                    <p className="font-medium text-foreground">Flow Saved!</p>
                                     <p className="text-sm text-muted-foreground">Your template is ready to use</p>
                                 </div>
                             </CardContent>
@@ -1040,11 +1421,11 @@ export default function CreateTransaction() {
 // Step indicator component
 function StepIndicator({ step, label, active, completed }: { step: number; label: string; active: boolean; completed: boolean }) {
     return (
-        <div className={`flex items-center gap-2 ${active ? 'text-foreground' : completed ? 'text-slate-8000' : 'text-muted-foreground'}`}>
+        <div className={`flex items-center gap-2 ${active ? 'text-foreground' : completed ? 'text-[#2563EB]' : 'text-muted-foreground'}`}>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${completed
-                ? 'bg-slate-8000/20 text-slate-8000'
+                ? 'bg-[#2563EB]/20 text-[#2563EB]'
                 : active
-                    ? 'bg-slate-8000/20 text-slate-8000 ring-2 ring-slate-8000/30'
+                    ? 'bg-[#2563EB]/20 text-[#2563EB] ring-2 ring-[#2563EB]/30'
                     : 'bg-muted/50'
                 }`}>
                 {completed ? <Check className="w-4 h-4" /> : step}
