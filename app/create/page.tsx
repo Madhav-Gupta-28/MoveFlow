@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Play, Zap, Check, AlertCircle, Code } from 'lucide-react';
+import { Play, Zap, Check, AlertCircle, Code, XCircle, CheckCircle2, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1053,11 +1053,11 @@ export default function CreateTransaction() {
 
                         {simulationResult && decodedSimulationResult && (
                             <>
-                                <Card className={`border-foreground/20 animate-fade-in ${decodedSimulationResult.status === 'success' ? 'bg-secondary/30' : 'bg-destructive/10'}`}>
+                                <Card className={`border-2 animate-fade-in ${decodedSimulationResult.status === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                                     <CardHeader className="pb-4">
                                         <CardTitle className="text-base font-medium flex items-center gap-2">
                                             Simulation Result
-                                            <Badge variant="outline" className="gap-1">
+                                            <Badge className={`gap-1 ${decodedSimulationResult.status === 'success' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-600 border-red-300'}`}>
                                                 {decodedSimulationResult.status === 'success' ? (
                                                     <>
                                                         <Check className="w-3 h-3" />
@@ -1065,7 +1065,8 @@ export default function CreateTransaction() {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        ⚠️ Abort
+                                                        <XCircle className="w-3 h-3" />
+                                                        Failed
                                                     </>
                                                 )}
                                             </Badge>
@@ -1075,7 +1076,7 @@ export default function CreateTransaction() {
                                         {/* Status */}
                                         <div className="flex justify-between items-center py-2 border-b border-border">
                                             <span className="text-sm text-muted-foreground">Status</span>
-                                            <span className={`font-mono text-sm ${decodedSimulationResult.status === 'success' ? 'text-slate-8000' : 'text-destructive'}`}>
+                                            <span className={`font-mono text-sm font-semibold ${decodedSimulationResult.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                                                 {decodedSimulationResult.status.toUpperCase()}
                                             </span>
                                         </div>
@@ -1176,7 +1177,7 @@ export default function CreateTransaction() {
                                                             {diff.resourceType.split('::').pop()}
                                                         </div>
                                                         {diff.changeType === 'create' && (
-                                                            <Badge className="bg-slate-8000/10 text-slate-8000 text-xs shrink-0">New</Badge>
+                                                            <Badge className="bg-blue-600/10 text-blue-600 text-xs shrink-0">New</Badge>
                                                         )}
                                                         {diff.changeType === 'delete' && (
                                                             <Badge className="bg-red-500/10 text-red-500 text-xs shrink-0">Deleted</Badge>
@@ -1226,8 +1227,8 @@ export default function CreateTransaction() {
                                         )}
 
                                         {executionResult && (
-                                            <div className="p-4 rounded-lg bg-slate-8000/10 border border-slate-8000/20 space-y-3">
-                                                <div className="flex items-center gap-2 text-slate-8000">
+                                            <div className="p-4 rounded-lg bg-blue-600/10 border border-blue-600/20 space-y-3">
+                                                <div className="flex items-center gap-2 text-blue-600">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Transaction Confirmed!</span>
                                                 </div>
@@ -1290,7 +1291,7 @@ export default function CreateTransaction() {
                                                 )}
                                                 <div className="flex items-start gap-2">
                                                     <span className="text-xs text-muted-foreground min-w-[60px]">After:</span>
-                                                    <code className="flex-1 p-2 rounded bg-slate-800 dark:bg-blue-950/20 text-teal-500 dark:text-slate-8000 text-xs overflow-x-auto">
+                                                    <code className="flex-1 p-2 rounded bg-slate-800 dark:bg-blue-950/20 text-teal-500 dark:text-blue-600 text-xs overflow-x-auto">
                                                         {field.after}
                                                     </code>
                                                 </div>
@@ -1305,12 +1306,17 @@ export default function CreateTransaction() {
 
                 {/* Save Flow Dialog */}
                 <Dialog open={saveFlowDialogOpen} onOpenChange={setSaveFlowDialogOpen}>
-                    <DialogContent>
+                    <DialogContent className="border-t-4 border-t-blue-500">
                         <DialogHeader>
-                            <DialogTitle>Save as Flow</DialogTitle>
-                            <DialogDescription>
-                                Save this transaction as a reusable template
-                            </DialogDescription>
+                            <DialogTitle className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <Bookmark className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <span className="block">Save as Flow</span>
+                                    <span className="text-sm font-normal text-muted-foreground">Create a reusable template</span>
+                                </div>
+                            </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
@@ -1354,7 +1360,7 @@ export default function CreateTransaction() {
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-slate-8000" />
+                                <Zap className="w-5 h-5 text-blue-600" />
                                 Emitted Events
                             </DialogTitle>
                             <DialogDescription>
@@ -1366,7 +1372,7 @@ export default function CreateTransaction() {
                                 <div key={idx} className="border border-border rounded-lg p-4 space-y-3 bg-card/50">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                            <Badge className="bg-slate-8000/20 text-slate-8000">Event #{idx + 1}</Badge>
+                                            <Badge className="bg-blue-600/20 text-blue-600">Event #{idx + 1}</Badge>
                                             <span className="text-xs text-muted-foreground">Sequence #{event.sequenceNumber}</span>
                                         </div>
                                     </div>
@@ -1401,13 +1407,15 @@ export default function CreateTransaction() {
 
                 {/* Success Notification */}
                 {saveFlowSuccess && (
-                    <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
-                        <Card className="border-slate-8000/50 bg-slate-8000/10">
+                    <div className="fixed bottom-4 right-4 z-50 animate-slide-in-right">
+                        <Card className="border-2 border-green-200 bg-green-50 shadow-lg">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <Check className="w-5 h-5 text-[#2563EB]" />
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                </div>
                                 <div>
-                                    <p className="font-medium text-foreground">Flow Saved!</p>
-                                    <p className="text-sm text-muted-foreground">Your template is ready to use</p>
+                                    <p className="font-medium text-green-800">Flow Saved!</p>
+                                    <p className="text-sm text-green-600">Your template is ready to use</p>
                                 </div>
                             </CardContent>
                         </Card>

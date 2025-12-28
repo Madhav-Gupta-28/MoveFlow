@@ -88,7 +88,7 @@ export default function SavedFlows() {
                         {/* Empty State */}
                         <Card className="border-dashed border-2">
                             <CardContent className="p-16 text-center">
-                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-8000/20 to-slate-8000/20 flex items-center justify-center mx-auto mb-6">
+                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-600/20 flex items-center justify-center mx-auto mb-6">
                                     <Code className="w-10 h-10 text-teal-500" />
                                 </div>
                                 <h3 className="text-xl font-semibold mb-3">No saved flows yet</h3>
@@ -185,7 +185,7 @@ export default function SavedFlows() {
                                                     <Badge variant="secondary" className="font-mono text-xs">
                                                         {truncateModule(flow.module)}
                                                     </Badge>
-                                                    <Badge className="bg-slate-8000/10 text-slate-8000 border-slate-8000/20 font-mono text-xs">
+                                                    <Badge className="bg-blue-600/10 text-blue-600 border-blue-600/20 font-mono text-xs">
                                                         {flow.function}()
                                                     </Badge>
                                                     <Badge variant="outline" className="text-xs">

@@ -89,36 +89,52 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
                             </div>
                         </div>
                     ) : (
-                        availableWallets.map((wallet) => (
-                            <Button
-                                key={wallet.name}
-                                variant="outline"
-                                className="w-full justify-between h-14 px-4"
-                                onClick={() => handleConnect(wallet.name)}
-                                disabled={connectingWallet !== null}
-                            >
-                                <div className="flex items-center gap-3">
-                                    {wallet.icon && (
-                                        <img
-                                            src={wallet.icon}
-                                            alt={wallet.name}
-                                            className="w-8 h-8 rounded-lg"
-                                        />
-                                    )}
-                                    <div className="text-left">
-                                        <div className="font-medium">{wallet.name}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {wallet.readyState === 'Installed'
-                                                ? 'Installed'
-                                                : 'Not installed'}
+                        availableWallets.map((wallet) => {
+                            const isInstalled = wallet.readyState === 'Installed';
+                            return (
+                                <Button
+                                    key={wallet.name}
+                                    variant="outline"
+                                    className={`w-full justify-between h-16 px-4 transition-all duration-200 hover:shadow-md ${isInstalled
+                                            ? 'bg-green-50/50 border-green-200 hover:bg-green-50 hover:border-green-300'
+                                            : 'hover:bg-muted/50'
+                                        }`}
+                                    onClick={() => handleConnect(wallet.name)}
+                                    disabled={connectingWallet !== null}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isInstalled ? 'bg-white shadow-sm border border-green-100' : 'bg-muted'
+                                            }`}>
+                                            {wallet.icon && (
+                                                <img
+                                                    src={wallet.icon}
+                                                    alt={wallet.name}
+                                                    className="w-7 h-7 rounded-lg"
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="font-medium">{wallet.name}</div>
+                                            <div className={`text-xs flex items-center gap-1.5 ${isInstalled ? 'text-green-600' : 'text-muted-foreground'
+                                                }`}>
+                                                {isInstalled && (
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                )}
+                                                {isInstalled ? 'Ready to connect' : 'Not installed'}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                {connectingWallet === wallet.name && (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                )}
-                            </Button>
-                        ))
+                                    {connectingWallet === wallet.name && (
+                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                    )}
+                                    {isInstalled && connectingWallet !== wallet.name && (
+                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                                            Installed
+                                        </span>
+                                    )}
+                                </Button>
+                            );
+                        })
                     )}
                 </div>
 

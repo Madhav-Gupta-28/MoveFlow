@@ -39,25 +39,45 @@ export function Sidebar() {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href}>
-              <Button
-                variant={isActive ? 'secondary' : 'ghost'}
-                className={cn(
-                  'w-full gap-3 text-sm font-medium justify-start',
-                  isActive && 'font-semibold bg-sidebar-accent'
+              <div className="relative">
+                {/* Active indicator bar */}
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full" />
                 )}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.title}
-              </Button>
+                <Button
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'w-full gap-3 text-sm font-medium justify-start transition-all duration-200',
+                    isActive && 'font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100',
+                    !isActive && 'hover:bg-muted'
+                  )}
+                >
+                  <item.icon className={cn(
+                    "w-4 h-4 transition-colors",
+                    isActive ? "text-blue-600" : "text-muted-foreground"
+                  )} />
+                  {item.title}
+                </Button>
+              </div>
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-border">
-        <p className="text-xs text-muted-foreground">
-          MoveFlow v0.1.0
-        </p>
+      <div className="p-4 border-t border-border space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
+            <span className="text-white text-xs font-bold">M</span>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-foreground">MoveFlow</p>
+            <p className="text-[10px] text-muted-foreground">v0.1.0</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+          <span className="text-[10px] text-muted-foreground">Testnet Mode</span>
+        </div>
       </div>
     </aside>
   );

@@ -29,23 +29,23 @@ export default function Dashboard() {
                 <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-slate-8000/30" />
+                            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-blue-600/30" />
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#grid)" />
                 </svg>
 
                 {/* Decorative geometric shapes */}
-                <div className="absolute top-20 right-10 w-32 h-32 border border-slate-8000/20 rotate-45 animate-pulse" />
-                <div className="absolute top-40 right-20 w-24 h-24 border border-slate-8000/10 rotate-12" />
-                <div className="absolute bottom-32 left-10 w-40 h-40 border border-slate-8000/20 -rotate-12" />
-                <div className="absolute top-1/2 left-1/4 w-16 h-16 border border-slate-8000/10 rotate-45" />
+                <div className="absolute top-20 right-10 w-32 h-32 border border-blue-600/20 rotate-45 animate-pulse" />
+                <div className="absolute top-40 right-20 w-24 h-24 border border-blue-600/10 rotate-12" />
+                <div className="absolute bottom-32 left-10 w-40 h-40 border border-blue-600/20 -rotate-12" />
+                <div className="absolute top-1/2 left-1/4 w-16 h-16 border border-blue-600/10 rotate-45" />
 
                 {/* Plus signs decoration */}
-                <div className="absolute top-32 left-20 text-slate-8000/20 text-4xl font-light">+</div>
-                <div className="absolute top-40 left-28 text-slate-8000/15 text-2xl font-light">+</div>
-                <div className="absolute bottom-40 right-32 text-slate-8000/20 text-3xl font-light">+</div>
-                <div className="absolute bottom-48 right-20 text-slate-8000/15 text-2xl font-light">+</div>
+                <div className="absolute top-32 left-20 text-blue-600/20 text-4xl font-light">+</div>
+                <div className="absolute top-40 left-28 text-blue-600/15 text-2xl font-light">+</div>
+                <div className="absolute bottom-40 right-32 text-blue-600/20 text-3xl font-light">+</div>
+                <div className="absolute bottom-48 right-20 text-blue-600/15 text-2xl font-light">+</div>
             </div>
 
             {/* Main Content */}
@@ -54,8 +54,8 @@ export default function Dashboard() {
                 <section className="min-h-[70vh] flex flex-col justify-center px-8 md:px-16 py-20">
                     <div className="max-w-6xl">
                         {/* Small Tag */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-8000/30 bg-slate-8000/5 text-slate-8000 text-sm font-medium mb-8 animate-fade-in">
-                            <span className="w-2 h-2 bg-slate-8000 rounded-full animate-pulse" />
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-600/30 bg-blue-600/5 text-blue-600 text-sm font-medium mb-8 animate-fade-in">
+                            <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
                             VISUAL TRANSACTION BUILDER
                         </div>
 
@@ -63,7 +63,7 @@ export default function Dashboard() {
                         <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] mb-8 animate-fade-in">
                             <span className="block text-foreground">BUILD</span>
                             <span className="block text-foreground">TRANSACTIONS</span>
-                            <span className="block text-slate-8000">VISUALLY</span>
+                            <span className="block text-blue-600">VISUALLY</span>
                         </h1>
 
                         {/* Subtitle */}
@@ -81,7 +81,7 @@ export default function Dashboard() {
                                 </Button>
                             </Link>
                             <Link href="/flows">
-                                <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold border-2 gap-2 hover:bg-slate-8000/10 hover:border-slate-8000/50">
+                                <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold border-2 gap-2 hover:bg-blue-600/10 hover:border-blue-600/50">
                                     VIEW FLOWS
                                     <ChevronRight className="w-5 h-5" />
                                 </Button>
@@ -92,11 +92,11 @@ export default function Dashboard() {
                     {/* Floating Stats - Right Side */}
                     <div className="absolute right-8 md:right-16 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-8">
                         <div className="text-right animate-fade-in" style={{ animationDelay: '300ms' }}>
-                            <p className="text-5xl font-black text-slate-8000 font-mono">{stats.receipts}</p>
+                            <p className="text-5xl font-black text-blue-600 font-mono">{stats.receipts}</p>
                             <p className="text-sm text-muted-foreground uppercase tracking-wider">Transactions</p>
                         </div>
                         <div className="text-right animate-fade-in" style={{ animationDelay: '400ms' }}>
-                            <p className="text-5xl font-black text-slate-8000 font-mono">{stats.savedFlows}</p>
+                            <p className="text-5xl font-black text-blue-600 font-mono">{stats.savedFlows}</p>
                             <p className="text-sm text-muted-foreground uppercase tracking-wider">Saved Flows</p>
                         </div>
                     </div>
@@ -118,7 +118,7 @@ export default function Dashboard() {
                             {/* Step 1 */}
                             <div className="relative">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-8000 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                                    <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold mb-4">
                                         1
                                     </div>
                                     <h3 className="font-bold text-lg mb-2">Select Module</h3>
@@ -127,13 +127,13 @@ export default function Dashboard() {
                                     </p>
                                 </div>
                                 {/* Arrow */}
-                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-slate-8000/30" />
+                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-blue-600/30" />
                             </div>
 
                             {/* Step 2 */}
                             <div className="relative">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-8000 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                                    <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold mb-4">
                                         2
                                     </div>
                                     <h3 className="font-bold text-lg mb-2">Configure Parameters</h3>
@@ -141,13 +141,13 @@ export default function Dashboard() {
                                         Fill in function arguments with our smart form builder. Type validation ensures correctness
                                     </p>
                                 </div>
-                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-slate-8000/30" />
+                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-blue-600/30" />
                             </div>
 
                             {/* Step 3 */}
                             <div className="relative">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-8000 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                                    <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold mb-4">
                                         3
                                     </div>
                                     <h3 className="font-bold text-lg mb-2">Simulate First</h3>
@@ -155,13 +155,13 @@ export default function Dashboard() {
                                         Preview exactly what will happen on-chain before committing. See gas costs and state changes
                                     </p>
                                 </div>
-                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-slate-8000/30" />
+                                <ChevronRight className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-blue-600/30" />
                             </div>
 
                             {/* Step 4 */}
                             <div>
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-slate-8000 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                                    <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold mb-4">
                                         4
                                     </div>
                                     <h3 className="font-bold text-lg mb-2">Execute & Track</h3>
@@ -178,7 +178,7 @@ export default function Dashboard() {
                 <section className="px-8 md:px-16 py-20 border-t border-border/50">
                     <div className="max-w-6xl">
                         {/* Section Label */}
-                        <p className="text-slate-8000 text-sm font-medium uppercase tracking-wider mb-4">WHY MOVEFLOW?</p>
+                        <p className="text-blue-600 text-sm font-medium uppercase tracking-wider mb-4">WHY MOVEFLOW?</p>
 
                         {/* Section Title */}
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-16 max-w-3xl">
@@ -271,13 +271,13 @@ export default function Dashboard() {
                 {/* Quick Actions Section */}
                 <section className="px-8 md:px-16 py-20 border-t border-border/50">
                     <div className="max-w-6xl">
-                        <p className="text-slate-8000 text-sm font-medium uppercase tracking-wider mb-4">GET STARTED</p>
+                        <p className="text-blue-600 text-sm font-medium uppercase tracking-wider mb-4">GET STARTED</p>
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-12">QUICK ACTIONS</h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Create Transaction */}
                             <Link href="/create" className="group">
-                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-slate-8000/5 transition-all duration-300">
+                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-blue-600/5 transition-all duration-300">
                                     <div className="w-16 h-16 border border-teal-500/30 flex items-center justify-center mb-6 group-hover:border-teal-500 transition-colors">
                                         <Plus className="w-8 h-8 text-teal-500" />
                                     </div>
@@ -297,7 +297,7 @@ export default function Dashboard() {
 
                             {/* Saved Flows */}
                             <Link href="/flows" className="group">
-                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-slate-8000/5 transition-all duration-300">
+                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-blue-600/5 transition-all duration-300">
                                     <div className="w-16 h-16 border border-teal-500/30 flex items-center justify-center mb-6 group-hover:border-teal-500 transition-colors">
                                         <Bookmark className="w-8 h-8 text-teal-500" />
                                     </div>
@@ -317,7 +317,7 @@ export default function Dashboard() {
 
                             {/* Receipts */}
                             <Link href="/receipts" className="group">
-                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-slate-8000/5 transition-all duration-300">
+                                <div className="h-full p-8 border border-border bg-card/50 hover:border-teal-500/50 hover:bg-blue-600/5 transition-all duration-300">
                                     <div className="w-16 h-16 border border-teal-500/30 flex items-center justify-center mb-6 group-hover:border-teal-500 transition-colors">
                                         <Receipt className="w-8 h-8 text-teal-500" />
                                     </div>
@@ -337,9 +337,9 @@ export default function Dashboard() {
 
                             {/* Receipts */}
                             <Link href="/receipts" className="group">
-                                <div className="h-full p-8 border border-border bg-card/50 hover:border-slate-8000/50 hover:bg-slate-8000/5 transition-all duration-300">
-                                    <div className="w-16 h-16 border border-slate-8000/30 flex items-center justify-center mb-6 group-hover:border-slate-8000 transition-colors">
-                                        <Receipt className="w-8 h-8 text-slate-8000" />
+                                <div className="h-full p-8 border border-border bg-card/50 hover:border-blue-600/50 hover:bg-blue-600/5 transition-all duration-300">
+                                    <div className="w-16 h-16 border border-blue-600/30 flex items-center justify-center mb-6 group-hover:border-blue-600 transition-colors">
+                                        <Receipt className="w-8 h-8 text-blue-600" />
                                     </div>
                                     <h3 className="text-xl font-bold uppercase tracking-wide mb-3 flex items-center gap-2">
                                         Receipts

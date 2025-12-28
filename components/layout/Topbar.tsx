@@ -31,8 +31,11 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Badge variant="outline" className="gap-1.5 text-muted-foreground">
-          <Wifi className="w-3 h-3" />
+        <Badge className="gap-2 bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
           Movement Testnet
         </Badge>
         <WalletButton />
