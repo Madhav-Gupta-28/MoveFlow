@@ -87,15 +87,15 @@ export default function SavedFlows() {
                         {/* Empty State */}
                         <Card className="border-dashed border-2">
                             <CardContent className="p-16 text-center">
-                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/20 flex items-center justify-center mx-auto mb-6">
-                                    <Code className="w-10 h-10 text-blue-500" />
+                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-8000/20 to-slate-8000/20 flex items-center justify-center mx-auto mb-6">
+                                    <Code className="w-10 h-10 text-teal-500" />
                                 </div>
                                 <h3 className="text-xl font-semibold mb-3">No saved flows yet</h3>
                                 <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
                                     Create a transaction and save it as a reusable flow to speed up your workflow.
                                 </p>
                                 <Link href="/create">
-                                    <Button className="gap-2">
+                                    <Button className="gap-2 bg-teal-500 hover:bg-teal-600 text-white">
                                         <Plus className="w-4 h-4" />
                                         Create Your First Transaction
                                     </Button>
@@ -103,17 +103,56 @@ export default function SavedFlows() {
                             </CardContent>
                         </Card>
 
-                        {/* Tips Section */}
-                        <div className="mt-8 p-6 rounded-xl border border-border bg-card/30">
-                            <div className="flex items-start gap-3">
-                                <Lightbulb className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                                <div>
-                                    <h4 className="font-medium mb-2">Pro Tips</h4>
-                                    <ul className="text-sm text-muted-foreground space-y-2">
-                                        <li>• Save flows for transactions you execute frequently</li>
-                                        <li>• Use descriptive names like "Daily USDC Transfer" or "Stake 100 APT"</li>
-                                        <li>• Loading a flow pre-fills the form but doesn't auto-execute</li>
-                                    </ul>
+                        {/* Why Save Flows Section */}
+                        <div className="mt-8 p-6 rounded-xl border border-teal-500/20 bg-slate-800/50">
+                            <h4 className="font-semibold mb-4 text-teal-950">✨ Why Save Flows?</h4>
+                            <ul className="space-y-3 text-sm text-muted-foreground">
+                                <li className="flex items-start gap-3">
+                                    <span className="text-teal-500 font-bold shrink-0">1.</span>
+                                    <div>
+                                        <span className="font-medium text-foreground">Speed up repetitive tasks</span>
+                                        <p className="text-xs mt-0.5">No need to re-enter recipient addresses or amounts every time</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-teal-500 font-bold shrink-0">2.</span>
+                                    <div>
+                                        <span className="font-medium text-foreground">Reduce errors</span>
+                                        <p className="text-xs mt-0.5">Pre-configured parameters mean fewer typos and mistakes</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-teal-500 font-bold shrink-0">3.</span>
+                                    <div>
+                                        <span className="font-medium text-foreground">Share with teammates</span>
+                                        <p className="text-xs mt-0.5">Export flows as templates for your dev team</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Example Use Cases */}
+                        <div className="mt-6 p-6 rounded-xl border border-border bg-card/30">
+                            <h4 className="font-medium mb-4 flex items-center gap-2">
+                                <Lightbulb className="w-4 h-4 text-amber-500" />
+                                Example Use Cases
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="p-3 rounded-lg bg-muted/50">
+                                    <p className="font-medium mb-1">💸 Daily Treasury Transfer</p>
+                                    <p className="text-xs text-muted-foreground">Pre-fill recipient address for regular payments</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/50">
+                                    <p className="font-medium mb-1">🔄 Test Token Minting</p>
+                                    <p className="text-xs text-muted-foreground">Quick mint during development iterations</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/50">
+                                    <p className="font-medium mb-1">✅ Contract Verification</p>
+                                    <p className="text-xs text-muted-foreground">Call view functions to check state</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/50">
+                                    <p className="font-medium mb-1">🎯 Staking Operations</p>
+                                    <p className="text-xs text-muted-foreground">Stake/unstake with fixed amounts</p>
                                 </div>
                             </div>
                         </div>
@@ -145,7 +184,7 @@ export default function SavedFlows() {
                                                     <Badge variant="secondary" className="font-mono text-xs">
                                                         {truncateModule(flow.module)}
                                                     </Badge>
-                                                    <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 font-mono text-xs">
+                                                    <Badge className="bg-slate-8000/10 text-slate-8000 border-slate-8000/20 font-mono text-xs">
                                                         {flow.function}()
                                                     </Badge>
                                                     <Badge variant="outline" className="text-xs">

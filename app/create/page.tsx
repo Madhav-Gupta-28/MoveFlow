@@ -491,9 +491,12 @@ export default function CreateTransaction() {
                         <Card className="border-border">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-accent text-xs font-mono flex items-center justify-center">1</span>
+                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">1</span>
                                     Select Module
                                 </CardTitle>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Choose a Move module to interact with. Each module contains functions for specific operations like transfers or account creation.
+                                </p>
                             </CardHeader>
                             <CardContent>
                                 <Select value={transactionDraft.module} onValueChange={handleModuleChange}>
@@ -514,9 +517,12 @@ export default function CreateTransaction() {
                         <Card className="border-border">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-accent text-xs font-mono flex items-center justify-center">2</span>
+                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">2</span>
                                     Select Function
                                 </CardTitle>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Pick the function you want to call. The signature shows the required parameter types.
+                                </p>
                             </CardHeader>
                             <CardContent>
                                 <Select
@@ -543,9 +549,12 @@ export default function CreateTransaction() {
                         <Card className="border-border">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-full bg-accent text-xs font-mono flex items-center justify-center">3</span>
+                                    <span className="w-6 h-6 rounded-full bg-teal-500 text-white text-xs font-mono flex items-center justify-center">3</span>
                                     Parameters
                                 </CardTitle>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Enter the values for each parameter. Hover over types for format hints.
+                                </p>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {selectedFunctionData?.params.length ? (
@@ -685,7 +694,7 @@ export default function CreateTransaction() {
                                         {/* Status */}
                                         <div className="flex justify-between items-center py-2 border-b border-border">
                                             <span className="text-sm text-muted-foreground">Status</span>
-                                            <span className={`font-mono text-sm ${decodedSimulationResult.status === 'success' ? 'text-blue-500' : 'text-destructive'}`}>
+                                            <span className={`font-mono text-sm ${decodedSimulationResult.status === 'success' ? 'text-slate-8000' : 'text-destructive'}`}>
                                                 {decodedSimulationResult.status.toUpperCase()}
                                             </span>
                                         </div>
@@ -727,7 +736,7 @@ export default function CreateTransaction() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-7 text-xs text-blue-500 hover:text-purple-300"
+                                                        className="h-7 text-xs text-muted-foreground hover:text-[#2563EB]"
                                                         onClick={() => setEventsModalOpen(true)}
                                                     >
                                                         View All
@@ -786,7 +795,7 @@ export default function CreateTransaction() {
                                                             {diff.resourceType.split('::').pop()}
                                                         </div>
                                                         {diff.changeType === 'create' && (
-                                                            <Badge className="bg-blue-500/10 text-blue-500 text-xs shrink-0">New</Badge>
+                                                            <Badge className="bg-slate-8000/10 text-slate-8000 text-xs shrink-0">New</Badge>
                                                         )}
                                                         {diff.changeType === 'delete' && (
                                                             <Badge className="bg-red-500/10 text-red-500 text-xs shrink-0">Deleted</Badge>
@@ -836,8 +845,8 @@ export default function CreateTransaction() {
                                         )}
 
                                         {executionResult && (
-                                            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-3">
-                                                <div className="flex items-center gap-2 text-blue-500">
+                                            <div className="p-4 rounded-lg bg-slate-8000/10 border border-slate-8000/20 space-y-3">
+                                                <div className="flex items-center gap-2 text-slate-8000">
                                                     <Check className="w-5 h-5" />
                                                     <span className="font-medium">Transaction Confirmed!</span>
                                                 </div>
@@ -900,7 +909,7 @@ export default function CreateTransaction() {
                                                 )}
                                                 <div className="flex items-start gap-2">
                                                     <span className="text-xs text-muted-foreground min-w-[60px]">After:</span>
-                                                    <code className="flex-1 p-2 rounded bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-500 text-xs overflow-x-auto">
+                                                    <code className="flex-1 p-2 rounded bg-slate-800 dark:bg-blue-950/20 text-teal-500 dark:text-slate-8000 text-xs overflow-x-auto">
                                                         {field.after}
                                                     </code>
                                                 </div>
@@ -964,7 +973,7 @@ export default function CreateTransaction() {
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-blue-500" />
+                                <Zap className="w-5 h-5 text-slate-8000" />
                                 Emitted Events
                             </DialogTitle>
                             <DialogDescription>
@@ -976,7 +985,7 @@ export default function CreateTransaction() {
                                 <div key={idx} className="border border-border rounded-lg p-4 space-y-3 bg-card/50">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                            <Badge className="bg-blue-500/20 text-blue-500">Event #{idx + 1}</Badge>
+                                            <Badge className="bg-slate-8000/20 text-slate-8000">Event #{idx + 1}</Badge>
                                             <span className="text-xs text-muted-foreground">Sequence #{event.sequenceNumber}</span>
                                         </div>
                                     </div>
@@ -1012,11 +1021,11 @@ export default function CreateTransaction() {
                 {/* Success Notification */}
                 {saveFlowSuccess && (
                     <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
-                        <Card className="border-blue-500/50 bg-blue-500/10">
+                        <Card className="border-slate-8000/50 bg-slate-8000/10">
                             <CardContent className="p-4 flex items-center gap-3">
-                                <Check className="w-5 h-5 text-blue-500" />
+                                <Check className="w-5 h-5 text-slate-8000" />
                                 <div>
-                                    <p className="font-medium text-blue-500">Flow Saved!</p>
+                                    <p className="font-medium text-slate-8000">Flow Saved!</p>
                                     <p className="text-sm text-muted-foreground">Your template is ready to use</p>
                                 </div>
                             </CardContent>
@@ -1031,11 +1040,11 @@ export default function CreateTransaction() {
 // Step indicator component
 function StepIndicator({ step, label, active, completed }: { step: number; label: string; active: boolean; completed: boolean }) {
     return (
-        <div className={`flex items-center gap-2 ${active ? 'text-foreground' : completed ? 'text-blue-500' : 'text-muted-foreground'}`}>
+        <div className={`flex items-center gap-2 ${active ? 'text-foreground' : completed ? 'text-slate-8000' : 'text-muted-foreground'}`}>
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${completed
-                ? 'bg-blue-500/20 text-blue-500'
+                ? 'bg-slate-8000/20 text-slate-8000'
                 : active
-                    ? 'bg-blue-500/20 text-blue-500 ring-2 ring-blue-500/30'
+                    ? 'bg-slate-8000/20 text-slate-8000 ring-2 ring-slate-8000/30'
                     : 'bg-muted/50'
                 }`}>
                 {completed ? <Check className="w-4 h-4" /> : step}

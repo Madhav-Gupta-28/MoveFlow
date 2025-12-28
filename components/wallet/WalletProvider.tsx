@@ -8,7 +8,6 @@ interface WalletProviderProps {
 }
 
 // Movement Testnet compatible wallets
-// Razor Wallet is AIP-62 compliant and auto-detected when installed
 // Nightly is explicitly opted-in for better Movement support
 const optInWallets: readonly ("Nightly" | "Petra" | "Pontem Wallet")[] = [
     "Nightly",

@@ -9,15 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-[#2563EB] text-white hover:bg-[#1D4ED8]",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        ghost: "hover:bg-[rgba(37,99,235,0.1)] hover:text-[#2563EB]",
+        link: "text-[#2563EB] underline-offset-4 hover:underline",
         // MoveFlow custom variants
-        action: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]",
-        execute: "border border-muted-foreground/30 bg-transparent text-foreground hover:border-foreground hover:bg-accent",
+        action: "bg-[#2563EB] text-white hover:bg-[#1D4ED8] hover:shadow-[0_0_20px_rgba(37,99,235,0.2)]",
+        execute: "border border-muted-foreground/30 bg-transparent text-foreground hover:border-[#2563EB] hover:bg-[rgba(37,99,235,0.1)]",
         nav: "bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent justify-start",
         navActive: "bg-accent text-foreground justify-start",
       },
@@ -38,7 +38,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 

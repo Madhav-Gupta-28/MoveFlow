@@ -7,7 +7,33 @@
 
 @layer base {
   :root {
-    /* Movement Labs Inspired Light Theme */
+    /* ===== Movement Labs Inspired Color Tokens ===== */
+
+    /* NEUTRAL BACKGROUND */
+    --bg-base: #FFFFFF;
+    --bg-offwhite: #F9F9F9;
+    --bg-section: #F9F9F9;
+
+    /* TEXT */
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
+
+    /* ACCENT COLORS */
+    --accent-primary-hex: #2563EB;
+    --accent-hover-hex: #1D4ED8;
+    --accent-subtle: rgba(37, 99, 235, 0.1);
+
+    /* BUTTONS */
+    --btn-primary-bg: #2563EB;
+    --btn-primary-text: #FFFFFF;
+    --btn-primary-hover: #1D4ED8;
+
+    /* LINKS */
+    --link-color: #2563EB;
+    --link-hover: #1D4ED8;
+
+    /* ===== Shadcn/Tailwind HSL Tokens ===== */
     --background: 0 0% 100%;
     /* #FFFFFF */
     --foreground: 220 39% 11%;
@@ -21,11 +47,10 @@
     --popover-foreground: 220 39% 11%;
 
     --primary: 217 91% 60%;
-    /* #2563EB - Blue accent */
+    /* #2563EB */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
-    /* Light gray */
     --secondary-foreground: 220 39% 11%;
 
     --muted: 220 14% 96%;
@@ -46,20 +71,15 @@
     --warning-foreground: 220 39% 11%;
 
     --border: 220 13% 91%;
-    /* Light border */
     --input: 220 13% 91%;
     --ring: 217 91% 60%;
-    /* Blue ring */
 
     --radius: 0.5rem;
 
     /* Accent Colors - Blue focused */
     --accent-primary: 217 91% 60%;
-    /* #2563EB */
     --accent-secondary: 199 89% 48%;
-    /* Cyan complement */
     --accent-tertiary: 221 83% 53%;
-    /* Darker blue */
 
     /* Sidebar tokens */
     --sidebar-background: 0 0% 100%;

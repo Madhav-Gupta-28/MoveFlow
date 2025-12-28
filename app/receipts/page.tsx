@@ -173,7 +173,7 @@ export default function ReceiptsPage() {
                             </div>
                             <div className="w-px h-6 bg-border" />
                             <div className="flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                <CheckCircle2 className="w-4 h-4 text-slate-8000" />
                                 <span className="text-sm">{receipts.filter(r => r.status === 'success').length} Successful</span>
                             </div>
                             {receipts.filter(r => r.status === 'failed').length > 0 && (
@@ -192,8 +192,8 @@ export default function ReceiptsPage() {
                         <div className="max-w-2xl mx-auto">
                             <Card className="border-dashed border-2">
                                 <CardContent className="flex flex-col items-center justify-center py-16">
-                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mb-6">
-                                        <FileText className="w-10 h-10 text-blue-500" />
+                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-8000/20 to-cyan-500/20 flex items-center justify-center mb-6">
+                                        <FileText className="w-10 h-10 text-teal-500" />
                                     </div>
                                     <h3 className="text-xl font-semibold mb-3">No receipts yet</h3>
                                     <p className="text-muted-foreground mb-8 text-center max-w-sm">
@@ -201,13 +201,39 @@ export default function ReceiptsPage() {
                                         All receipts are stored locally in your browser.
                                     </p>
                                     <Link href="/create">
-                                        <Button className="gap-2">
+                                        <Button className="gap-2 bg-teal-500 hover:bg-teal-600 text-white">
                                             <Plus className="w-4 h-4" />
                                             Create Your First Transaction
                                         </Button>
                                     </Link>
                                 </CardContent>
                             </Card>
+
+                            {/* Understanding Receipts */}
+                            <div className="mt-8 p-6 rounded-xl border border-teal-500/20 bg-slate-800/50">
+                                <h4 className="font-semibold mb-4 text-teal-950">📋 What Are Transaction Receipts?</h4>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Every executed transaction generates a receipt with important information to help you track and verify your operations.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                    <div className="p-3 rounded-lg bg-slate-800/80 border border-border">
+                                        <p className="font-medium mb-1">⛽ Gas Cost</p>
+                                        <p className="text-xs text-muted-foreground">How much computation the transaction consumed</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-slate-800/80 border border-border">
+                                        <p className="font-medium mb-1">🔄 State Changes</p>
+                                        <p className="text-xs text-muted-foreground">What data was created, modified, or deleted</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-slate-800/80 border border-border">
+                                        <p className="font-medium mb-1">📝 Parameters</p>
+                                        <p className="text-xs text-muted-foreground">The exact values you passed to the function</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-slate-800/80 border border-border">
+                                        <p className="font-medium mb-1">🔗 Transaction Hash</p>
+                                        <p className="text-xs text-muted-foreground">Unique ID to verify on chain explorers</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="max-w-3xl">
@@ -216,7 +242,7 @@ export default function ReceiptsPage() {
                                 {receipts.map((receipt, index) => (
                                     <Card
                                         key={receipt.id}
-                                        className="transition-all hover:border-blue-500/50 animate-fade-in group"
+                                        className="transition-all hover:border-slate-8000/50 animate-fade-in group"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
                                         <CardContent className="p-4">
@@ -294,7 +320,7 @@ export default function ReceiptsPage() {
                 <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-blue-500" />
+                            <FileText className="w-5 h-5 text-slate-8000" />
                             Full Receipt Details
                         </DialogTitle>
                         <DialogDescription>
@@ -306,7 +332,7 @@ export default function ReceiptsPage() {
                             {/* Basic Info */}
                             <div className="space-y-3">
                                 <h4 className="font-medium text-sm flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-8000" />
                                     Transaction Info
                                 </h4>
                                 <div className="space-y-2 text-sm">
@@ -332,7 +358,7 @@ export default function ReceiptsPage() {
                                                 className="h-7 w-7 p-0 shrink-0"
                                                 onClick={() => copyToClipboard(selectedReceipt.transactionHash, 'modal-hash')}
                                             >
-                                                <Copy className={`w-3.5 h-3.5 ${copiedField === 'modal-hash' ? 'text-blue-500' : ''}`} />
+                                                <Copy className={`w-3.5 h-3.5 ${copiedField === 'modal-hash' ? 'text-slate-8000' : ''}`} />
                                             </Button>
                                         </div>
                                     </div>
@@ -340,7 +366,7 @@ export default function ReceiptsPage() {
                                         <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/30">
                                             <span className="text-muted-foreground">Status</span>
                                             <Badge className={selectedReceipt.status === 'success'
-                                                ? 'bg-blue-500/10 text-blue-500 w-fit'
+                                                ? 'bg-slate-8000/10 text-slate-8000 w-fit'
                                                 : 'bg-red-500/10 text-red-500 w-fit'
                                             }>
                                                 {selectedReceipt.status}
@@ -376,7 +402,7 @@ export default function ReceiptsPage() {
                             {selectedReceipt.stateChanges && selectedReceipt.stateChanges.length > 0 && (
                                 <div className="space-y-3">
                                     <h4 className="font-medium text-sm flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-8000" />
                                         State Changes
                                     </h4>
                                     <div className="space-y-2">
@@ -384,9 +410,9 @@ export default function ReceiptsPage() {
                                             <div key={idx} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2 overflow-hidden">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <span className="text-sm font-medium break-all flex-1 min-w-0">{change.resourceType}</span>
-                                                    <Badge className={`text-xs shrink-0 ${change.changeType === 'create' ? 'bg-blue-500/10 text-blue-500'
+                                                    <Badge className={`text-xs shrink-0 ${change.changeType === 'create' ? 'bg-slate-8000/10 text-slate-8000'
                                                         : change.changeType === 'delete' ? 'bg-red-500/10 text-red-500'
-                                                            : 'bg-blue-500/10 text-blue-500'
+                                                            : 'bg-slate-8000/10 text-slate-8000'
                                                         }`}>
                                                         {change.changeType}
                                                     </Badge>
@@ -400,7 +426,7 @@ export default function ReceiptsPage() {
                                                                     <code className="block whitespace-pre-wrap">{diff.before}</code>
                                                                 </div>
                                                             )}
-                                                            <div className="text-blue-500 break-all text-xs overflow-x-auto max-w-full">
+                                                            <div className="text-slate-8000 break-all text-xs overflow-x-auto max-w-full">
                                                                 <code className="block whitespace-pre-wrap">{diff.after}</code>
                                                             </div>
                                                         </div>
@@ -451,7 +477,7 @@ function DetailRow({
                 </span>
                 {copyable && onCopy && (
                     <button onClick={onCopy} className="text-muted-foreground hover:text-foreground transition-colors">
-                        <Copy className={`w-3.5 h-3.5 ${copied ? 'text-blue-500' : ''}`} />
+                        <Copy className={`w-3.5 h-3.5 ${copied ? 'text-slate-8000' : ''}`} />
                     </button>
                 )}
             </div>
