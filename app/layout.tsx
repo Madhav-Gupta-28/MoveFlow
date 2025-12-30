@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     keywords: 'Movement, blockchain, Move, transaction builder, simulator, crypto, Web3, developer tools',
     authors: [{ name: 'MoveFlow Team' }],
     icons: {
-        icon: '/icon.png',
-        apple: '/icon.png',
+        icon: '/logo_icon.png',
+        apple: '/logo_icon.png',
     },
     openGraph: {
         title: 'MoveFlow - Visual Transaction Builder for Movement',

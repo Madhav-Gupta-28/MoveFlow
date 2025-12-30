@@ -83,8 +83,8 @@ export function Sidebar() {
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2 cursor-help">
-              <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-600 to-teal-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">M</span>
+              <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">
+                <img src="/logo_icon.png" alt="MF" className="w-full h-full object-cover" />
               </div>
               <div>
                 <p className="text-xs font-medium text-foreground">MoveFlow</p>
