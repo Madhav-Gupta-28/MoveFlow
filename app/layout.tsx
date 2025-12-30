@@ -16,26 +16,21 @@ export const metadata: Metadata = {
     title: 'MoveFlow - Visual Transaction Builder for Movement',
     description: 'Visual transaction builder and simulator for the Movement blockchain. Build, simulate, and execute Move transactions with ease.',
     keywords: 'Movement, blockchain, Move, transaction builder, simulator, crypto, Web3, developer tools',
-    authors: [{ name: 'MoveFlow' }],
+    authors: [{ name: 'MoveFlow Team' }],
+    icons: {
+        icon: '/icon.png',
+        apple: '/icon.png',
+    },
     openGraph: {
         title: 'MoveFlow - Visual Transaction Builder for Movement',
         description: 'Visual transaction builder and simulator for the Movement blockchain. Build, simulate, and execute Move transactions with ease.',
         type: 'website',
-        url: 'https://moveflow.app',
-        images: [
-            {
-                url: 'https://lovable.dev/opengraph-image-p98pqg.png',
-                width: 1200,
-                height: 630,
-                alt: 'MoveFlow',
-            },
-        ],
+        siteName: 'MoveFlow',
     },
     twitter: {
-        card: 'summary_large_image',
+        card: 'summary',
         title: 'MoveFlow - Visual Transaction Builder for Movement',
         description: 'Visual transaction builder and simulator for the Movement blockchain.',
-        images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
     },
 };
 
