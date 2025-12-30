@@ -327,16 +327,12 @@ export default function CreateTransaction() {
             type: param.type,
         })) || [];
 
-        // Determine signer display based on connection and selection
+        // Determine signer display based on connection
         let signerDisplay = 'Not Connected';
-        if (transactionDraft.signer === 'user') {
-            if (connected && account?.address) {
-                signerDisplay = truncateAddress(account.address.toString());
-            } else {
-                signerDisplay = 'Connect Wallet';
-            }
+        if (connected && account?.address) {
+            signerDisplay = truncateAddress(account.address.toString());
         } else {
-            signerDisplay = 'Agent Signer';
+            signerDisplay = 'Connect Wallet';
         }
 
         return {
@@ -968,16 +964,15 @@ export default function CreateTransaction() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <RadioGroup value={transactionDraft.signer} onValueChange={handleSignerChange} className="space-y-3">
-                                            <div className="flex items-center space-x-3">
-                                                <RadioGroupItem value="user" id="user" />
-                                                <Label htmlFor="user" className="text-sm cursor-pointer">User Wallet</Label>
+                                        <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <span className="text-lg">👤</span>
                                             </div>
-                                            <div className="flex items-center space-x-3">
-                                                <RadioGroupItem value="agent" id="agent" />
-                                                <Label htmlFor="agent" className="text-sm cursor-pointer">Agent Signer</Label>
+                                            <div>
+                                                <p className="font-medium text-sm">User Wallet</p>
+                                                <p className="text-xs text-muted-foreground">Transaction will be signed by your connected wallet</p>
                                             </div>
-                                        </RadioGroup>
+                                        </div>
                                     </CardContent>
                                 </Card>
 

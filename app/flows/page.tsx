@@ -189,7 +189,7 @@ export default function SavedFlows() {
                                                         {flow.function}()
                                                     </Badge>
                                                     <Badge variant="outline" className="text-xs">
-                                                        {flow.signerType === 'user' ? '👤 User Signer' : '🤖 Agent Signer'}
+                                                        👤 User Wallet
                                                     </Badge>
                                                 </div>
 
